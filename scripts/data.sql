@@ -1,5 +1,7 @@
 USE hospital;
 
+SET NAMES 'utf8mb4';
+
 -- 1. pessoa (19 registros: 7 pacientes + 6 residentes + 6 preceptores)
 INSERT INTO pessoa (id_pessoa, nome, cpf, data_nascimento, is_flamengo, telefone) VALUES
 -- Pacientes (1-7)
