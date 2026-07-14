@@ -5,6 +5,8 @@ CREATE DATABASE hospital
 
 USE hospital;
 
+SET NAMES 'utf8mb4';
+
 -- 1. Tabela Base: pessoa
 CREATE TABLE pessoa (
     id_pessoa        INT           NOT NULL,
