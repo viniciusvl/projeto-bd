@@ -9,7 +9,7 @@ SET NAMES 'utf8mb4';
 
 -- 1. Tabela Base: pessoa
 CREATE TABLE pessoa (
-    id_pessoa        INT           NOT NULL,
+    id_pessoa        INT           NOT NULL AUTO_INCREMENT,
     nome             VARCHAR(150)  NOT NULL,
     cpf              VARCHAR(14)   NOT NULL,
     data_nascimento  DATE          NOT NULL,

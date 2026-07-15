@@ -2,11 +2,13 @@ import type {
   Atendimento,
   AtendimentoCreate,
   Paciente,
+  PacienteCreate,
   PacienteSemRisco,
   PacienteUpdate,
   PlantaoUnidade,
   PreceptorSupervisao,
   ProcedimentoRealizado,
+  Profissional,
   RankingResidente,
   TempoMedio,
 } from "../types";
@@ -44,11 +46,20 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
 export const api = {
   // Pacientes
   listarPacientes: () => request<Paciente[]>("/paciente/"),
+  criarPaciente: (body: PacienteCreate) =>
+    request<Paciente>("/paciente", {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
   atualizarPaciente: (body: PacienteUpdate) =>
     request<{ id_pessoa: number; atualizado: boolean }>("/paciente", {
       method: "PATCH",
       body: JSON.stringify(body),
     }),
+
+  // Profissionais
+  listarResidentes: () => request<Profissional[]>("/profissional/residentes/"),
+  listarPreceptores: () => request<Profissional[]>("/profissional/preceptores/"),
 
   // Atendimentos
   listarAtendimentos: (idPaciente: number) =>

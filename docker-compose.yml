@@ -11,7 +11,9 @@ services:
       - ./scripts/hospital.sql:/docker-entrypoint-initdb.d/01_hospital.sql:ro
       - ./scripts/data.sql:/docker-entrypoint-initdb.d/02_data.sql:ro
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-proot"]
+      # 127.0.0.1 força TCP: com "localhost" o ping passa pelo socket e responde
+      # durante o init, liberando o back antes do banco estar de fato pronto.
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-proot"]
       interval: 5s
       timeout: 5s
       retries: 10

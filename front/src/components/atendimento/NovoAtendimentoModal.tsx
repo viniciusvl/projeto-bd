@@ -5,7 +5,7 @@ import { Modal } from "../ui/Modal";
 import { Button } from "../ui/Button";
 import { useToast } from "../ui/Toast";
 import { api } from "../../api/client";
-import type { Paciente } from "../../types";
+import type { Paciente, Profissional } from "../../types";
 
 interface Props {
   open: boolean;
@@ -26,10 +26,24 @@ export function NovoAtendimentoModal({ open, onClose, pacientes, onCreated }: Pr
   const { notify } = useToast();
   const [form, setForm] = useState(inicial);
   const [salvando, setSalvando] = useState(false);
+  const [residentes, setResidentes] = useState<Profissional[]>([]);
+  const [preceptores, setPreceptores] = useState<Profissional[]>([]);
 
   useEffect(() => {
-    if (open) setForm(inicial);
-  }, [open]);
+    if (!open) return;
+    setForm(inicial);
+    Promise.all([api.listarResidentes(), api.listarPreceptores()])
+      .then(([res, prec]) => {
+        setResidentes(res);
+        setPreceptores(prec);
+      })
+      .catch((e) =>
+        notify(
+          "error",
+          e instanceof Error ? e.message : "Erro ao carregar residentes e preceptores."
+        )
+      );
+  }, [open, notify]);
 
   function update<K extends keyof typeof inicial>(key: K, value: string) {
     setForm((f) => ({ ...f, [key]: value }));
@@ -117,29 +131,35 @@ export function NovoAtendimentoModal({ open, onClose, pacientes, onCreated }: Pr
         <div className="grid grid-cols-2 gap-3">
           <div>
             <label className="label">Residente</label>
-            <input
+            <select
               required
-              type="number"
-              min={1}
               className="input"
-              placeholder="ID"
               value={form.id_residente}
               onChange={(e) => update("id_residente", e.target.value)}
-            />
-            <p className="mt-1 text-[11px] text-slate-400">Ex.: 8–13</p>
+            >
+              <option value="">Selecione...</option>
+              {residentes.map((r) => (
+                <option key={r.id_profissional} value={r.id_profissional}>
+                  {r.nome}
+                </option>
+              ))}
+            </select>
           </div>
           <div>
             <label className="label">Preceptor</label>
-            <input
+            <select
               required
-              type="number"
-              min={1}
               className="input"
-              placeholder="ID"
               value={form.id_preceptor}
               onChange={(e) => update("id_preceptor", e.target.value)}
-            />
-            <p className="mt-1 text-[11px] text-slate-400">Ex.: 14–19</p>
+            >
+              <option value="">Selecione...</option>
+              {preceptores.map((p) => (
+                <option key={p.id_profissional} value={p.id_profissional}>
+                  {p.nome}
+                </option>
+              ))}
+            </select>
           </div>
         </div>
       </form>

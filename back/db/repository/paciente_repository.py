@@ -1,6 +1,38 @@
 from db.connect import executar_query
 
 
+def criar(
+    nome,
+    cpf,
+    data_nascimento,
+    is_flamengo,
+    telefone,
+    num_convenio,
+    grupo_sanguineo,
+    estado,
+    cidade,
+    bairro,
+    logradouro,
+    numero,
+):
+    _, id_pessoa = executar_query(
+        """
+        INSERT INTO pessoa (nome, cpf, data_nascimento, is_flamengo, telefone)
+        VALUES (%s, %s, %s, %s, %s)
+        """,
+        (nome, cpf, data_nascimento, is_flamengo, telefone),
+    )
+    executar_query(
+        """
+        INSERT INTO paciente
+            (id_pessoa, num_convenio, grupo_sanguineo, estado, cidade, bairro, logradouro, numero)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+        """,
+        (id_pessoa, num_convenio, grupo_sanguineo, estado, cidade, bairro, logradouro, numero),
+    )
+    return id_pessoa
+
+
 def listar_todos():
     sql = """
         SELECT

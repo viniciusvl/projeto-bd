@@ -1,12 +1,17 @@
+import os
+
 import uvicorn
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
-from api.routers import atendimento, paciente, procedimento, relatorio
+from api.routers import atendimento, paciente, procedimento, profissional, relatorio
 from exceptions.errors import AppException
 
-app = FastAPI(title="API do sistema de gerenciamento hospitalar Dra. Yuska")
+app = FastAPI(
+    title="API do sistema de gerenciamento hospitalar Dra. Yuska",
+    root_path=os.getenv("ROOT_PATH", ""),
+)
 
 # Libera o acesso a partir do frontend (browser chama a API de outra origem).
 app.add_middleware(
@@ -20,6 +25,7 @@ app.add_middleware(
 app.include_router(atendimento.router)
 app.include_router(paciente.router)
 app.include_router(procedimento.router)
+app.include_router(profissional.router)
 app.include_router(relatorio.router)
 
 

@@ -21,6 +21,26 @@ export interface PacienteUpdate {
   numero?: string | null;
 }
 
+export interface PacienteCreate {
+  nome: string;
+  cpf: string;
+  data_nascimento: string;
+  is_flamengo: boolean;
+  telefone?: string | null;
+  num_convenio?: string | null;
+  grupo_sanguineo?: string | null;
+  estado?: string | null;
+  cidade?: string | null;
+  bairro?: string | null;
+  logradouro?: string | null;
+  numero?: string | null;
+}
+
+export interface Profissional {
+  id_profissional: number;
+  nome: string;
+}
+
 export interface Atendimento {
   id_atendimento: number;
   data_hora: string;

@@ -1,11 +1,12 @@
 import { useMemo, useState } from "react";
-import { Pencil, Search, Users } from "lucide-react";
+import { Pencil, Search, UserPlus, Users } from "lucide-react";
 import { AppLayout } from "../components/layout/AppLayout";
 import { Button } from "../components/ui/Button";
 import { Card } from "../components/ui/Card";
 import { Spinner } from "../components/ui/Spinner";
 import { EmptyState } from "../components/ui/EmptyState";
 import { EditarPacienteModal } from "../components/paciente/EditarPacienteModal";
+import { NovoPacienteModal } from "../components/paciente/NovoPacienteModal";
 import { useFetch } from "../lib/useFetch";
 import { api } from "../api/client";
 import type { Paciente } from "../types";
@@ -24,6 +25,7 @@ export function PacientesPage() {
 
   const [busca, setBusca] = useState("");
   const [selecionado, setSelecionado] = useState<Paciente | null>(null);
+  const [cadastrando, setCadastrando] = useState(false);
 
   const filtrados = useMemo(
     () =>
@@ -43,14 +45,19 @@ export function PacientesPage() {
         title="Pacientes"
         subtitle={`${filtrados.length} paciente(s)`}
         action={
-          <div className="relative">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-            <input
-              className="input pl-9"
-              placeholder="Buscar paciente..."
-              value={busca}
-              onChange={(e) => setBusca(e.target.value)}
-            />
+          <div className="flex items-center gap-2">
+            <div className="relative">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+              <input
+                className="input pl-9"
+                placeholder="Buscar paciente..."
+                value={busca}
+                onChange={(e) => setBusca(e.target.value)}
+              />
+            </div>
+            <Button onClick={() => setCadastrando(true)}>
+              <UserPlus className="h-4 w-4" /> Novo paciente
+            </Button>
           </div>
         }
       >
@@ -102,6 +109,12 @@ export function PacientesPage() {
         open={!!selecionado}
         onClose={() => setSelecionado(null)}
         onSaved={reload}
+      />
+
+      <NovoPacienteModal
+        open={cadastrando}
+        onClose={() => setCadastrando(false)}
+        onCreated={reload}
       />
     </AppLayout>
   );
