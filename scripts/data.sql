@@ -139,7 +139,19 @@ INSERT INTO atendimento (id_atendimento, data_hora, duracao_minutos, id_paciente
 (9,  '2026-04-15 15:30:00', 55,  2, 10,  16),   -- Joao   + Lucas  + Eduardo (Ortop)
 (10, '2026-05-10 08:00:00', 35,  3, 12,  18),   -- Ana    + Thiago + Marcos (Cirurg)
 (11, '2026-06-01 19:00:00', 70,  4, 13,  19),   -- Pedro  + Isabela + Sandra (Clin)
-(12, '2026-07-08 22:15:00', 15,  5, 11,  17);   -- Lucia  + Beatriz + Adriana (Clin)
+(12, '2026-07-08 22:15:00', 15,  5, 11,  17),   -- Lucia  + Beatriz + Adriana (Clin)
+(13, '2026-05-02 09:00:00', 30,  1,  8,  14),   -- Maria + Vinícius Índio + Fernando (Cardio)
+(14, '2026-05-05 10:30:00', 45,  2,  8,  14),   -- Pedro + Vinícius Índio + Fernando (Cardio)
+(15, '2026-05-12 14:00:00', 40,  3,  8,  14),   -- Ana + Vinícius Índio + Fernando (Cardio)
+(16, '2026-05-15 16:15:00', 35,  4,  8,  14),   -- Evandro + Vinícius Índio + Fernando (Cardio)
+(17, '2026-05-20 08:30:00', 50,  5,  8,  14),   -- Lucia + Vinícius Índio + Fernando (Cardio)
+(18, '2026-05-25 11:00:00', 60,  6,  8,  14),   -- Carlos + Vinícius Índio + Fernando (Cardio)
+(19, '2026-05-26 15:00:00', 40,  7, 10,  16),   -- Fernanda + Vinícius Mandacaru + Eduardo (Ortop)
+(20, '2026-06-02 09:00:00', 30,  1, 10,  16),   -- Maria + Vinícius Mandacaru + Eduardo (Ortop)
+(21, '2026-06-03 10:00:00', 45,  2, 10,  16),   -- Pedro + Vinícius Mandacaru + Eduardo (Ortop)
+(22, '2026-06-04 11:00:00', 50,  3, 10,  16),   -- Ana + Vinícius Mandacaru + Eduardo (Ortop)
+(23, '2026-05-28 14:30:00', 30,  4,  9,  15),   -- Evandro + Camila + Patricia (Neuro)
+(24, '2026-05-29 16:00:00', 25,  5,  9,  15);   -- Lucia + Camila + Patricia (Neuro)
 
 -- 12. procedimento_realizado (13 registros)
 INSERT INTO procedimento_realizado (id_atendimento, id_procedimento, quantidade, faturado, tempo_real_minutos, observacao) VALUES
@@ -165,7 +177,27 @@ INSERT INTO procedimento_realizado (id_atendimento, id_procedimento, quantidade,
 -- Atendimento 9: Joao - Ortop
 (9,  2, 1, FALSE, 15,  'Raio-X de coluna lombar'),
 -- Atendimento 10: Ana - Cirurg
-(10, 3, 1, TRUE,  50,  'Sutura cirurgica de 12 pontos, procedimento prolongado');
+(10, 3, 1, TRUE,  50,  'Sutura cirurgica de 12 pontos, procedimento prolongado'),
+-- Atendimento 13: Maria - Cardio
+(13, 1, 1, FALSE, 15,  'Eletrocardiograma de rotina no plantão'),
+-- Atendimento 14: Pedro - Cardio
+(14, 5, 1, TRUE,   5,  'Acesso venoso rápido'),
+-- Atendimento 15: Ana - Cardio
+(15, 6, 1, FALSE, 10,  'Curativo pós-operatório simples'),
+-- Atendimento 16: Evandro - Cardio
+(16, 2, 1, TRUE,  20,  'Raio-x de tórax solicitado pelo preceptor'),
+-- Atendimento 17: Lucia - Cardio
+(17, 1, 1, FALSE, 15,  'ECG de urgência'),
+-- Atendimento 18: Carlos - Cardio
+(18, 3, 1, TRUE,  30,  'Sutura simples'),
+-- Atendimento 19: Fernanda - Ortop
+(19, 5, 2, FALSE,  8,  'Punções difíceis'),
+-- Atendimento 20: Maria - Ortop
+(20, 2, 1, TRUE,  20,  'RX de controle'),
+-- Atendimento 21: Pedro - Ortop
+(21, 6, 1, FALSE, 12,  'Troca de curativo'),
+-- Atendimento 22: Ana - Ortop
+(22, 1, 1, TRUE,  15,  'ECG padrão de entrada');
 
 -- 13. escala (8 registros)
 INSERT INTO escala (id_escala, id_unidade, dia_semana, turno, id_residente, id_preceptor) VALUES
