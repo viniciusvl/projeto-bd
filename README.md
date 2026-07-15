@@ -1,4 +1,4 @@
-# Gerenciamento hospitalar Dra. Yuska Martins Brito
+# Gerenciamento hospitalar Dra. Yuska Maritan Brito
 
 <div align="center">
   <img src="front/public/logo-sistema.png" alt="Logo" width="200">
