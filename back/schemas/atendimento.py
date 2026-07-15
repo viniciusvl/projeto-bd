@@ -19,6 +19,8 @@ class AtendimentoOut(BaseModel):
     id_paciente: int
     id_residente: int
     id_preceptor: int
+    nome_residente: Optional[str] = None
+    nome_preceptor: Optional[str] = None
 
 
 class TempoMedioOut(BaseModel):

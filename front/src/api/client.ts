@@ -9,6 +9,7 @@ import type {
   PreceptorSupervisao,
   ProcedimentoRealizado,
   Profissional,
+  RankingPreceptor,
   RankingResidente,
   TempoMedio,
 } from "../types";
@@ -85,6 +86,8 @@ export const api = {
   tempoMedio: () => request<TempoMedio[]>("/atendimento/tempo-medio/"),
   rankingResidentes: () =>
     request<RankingResidente[]>("/relatorio/ranking-residentes/"),
+  rankingPreceptores: () =>
+    request<RankingPreceptor[]>("/relatorio/ranking-preceptores/"),
   preceptoresSupervisao: (ano: number, mes: number) =>
     request<PreceptorSupervisao[]>(
       `/relatorio/preceptores-supervisao/?ano=${ano}&mes=${mes}`

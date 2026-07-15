@@ -11,6 +11,11 @@ class PreceptorSupervisaoOut(BaseModel):
     total_supervisoes: int
 
 
+class RankingPreceptorOut(BaseModel):
+    nome: str
+    total: int
+
+
 class PlantaoUnidadeOut(BaseModel):
     unidade: str
     residente: str

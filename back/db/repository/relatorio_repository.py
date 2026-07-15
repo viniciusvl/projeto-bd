@@ -16,6 +16,21 @@ def ranking_residentes():
     return executar_query(sql, fetch=True)
 
 
+def ranking_preceptores():
+    sql = """
+        SELECT
+            p.nome AS nome,
+            COUNT(atend.id_atendimento) AS total
+        FROM atendimento atend
+        INNER JOIN preceptor prec ON atend.id_preceptor = prec.id_profissional
+        INNER JOIN profissional prof ON prec.id_profissional = prof.id_pessoa
+        INNER JOIN pessoa p ON prof.id_pessoa = p.id_pessoa
+        GROUP BY p.id_pessoa, p.nome
+        ORDER BY total DESC
+    """
+    return executar_query(sql, fetch=True)
+
+
 def preceptores_supervisao(ano, mes):
     sql = """
         SELECT

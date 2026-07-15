@@ -48,6 +48,8 @@ export interface Atendimento {
   id_paciente: number;
   id_residente: number;
   id_preceptor: number;
+  nome_residente?: string | null;
+  nome_preceptor?: string | null;
 }
 
 export interface AtendimentoCreate {
@@ -80,6 +82,11 @@ export interface RankingResidente {
 export interface PreceptorSupervisao {
   nome_preceptor: string;
   total_supervisoes: number;
+}
+
+export interface RankingPreceptor {
+  nome: string;
+  total: number;
 }
 
 export interface PlantaoUnidade {

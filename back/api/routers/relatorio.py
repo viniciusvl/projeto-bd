@@ -7,6 +7,7 @@ from schemas.relatorio import (
     PacienteSemRiscoOut,
     PlantaoUnidadeOut,
     PreceptorSupervisaoOut,
+    RankingPreceptorOut,
     RankingResidenteOut,
 )
 from service import relatorio_service
@@ -17,6 +18,11 @@ router = APIRouter(prefix="/relatorio", tags=["relatorio"])
 @router.get("/ranking-residentes/", response_model=list[RankingResidenteOut])
 def ranking_residentes():
     return relatorio_service.ranking_residentes()
+
+
+@router.get("/ranking-preceptores/", response_model=list[RankingPreceptorOut])
+def ranking_preceptores():
+    return relatorio_service.ranking_preceptores()
 
 
 @router.get("/preceptores-supervisao/", response_model=list[PreceptorSupervisaoOut])

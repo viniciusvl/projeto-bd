@@ -2,6 +2,11 @@ USE hospital;
 
 SET NAMES 'utf8mb4';
 
+-- Observação: os INSERTs usam INSERT IGNORE para que este script seja
+-- idempotente. Ele é aplicado tanto na primeira inicialização do banco
+-- (docker-entrypoint-initdb.d) quanto a cada deploy pelo pipeline CI/CD,
+-- então rodar novamente apenas insere linhas novas e ignora as já existentes.
+
 -- 1. pessoa (19 registros: 7 pacientes + 6 residentes + 6 preceptores)
 INSERT INTO pessoa (id_pessoa, nome, cpf, data_nascimento, is_flamengo, telefone) VALUES
 -- Pacientes (1-7)
@@ -209,3 +214,121 @@ INSERT INTO escala (id_escala, id_unidade, dia_semana, turno, id_residente, id_p
 (6,  3, 'sexta',    'tarde',  9,  15),   -- Pediatria:  Camila + Patricia
 (7,  4, 'segunda',  'manha', 12,  18),   -- Centro Cir: Thiago + Marcos
 (8,  4, 'quarta',   'tarde', 10,  16);   -- Centro Cir: Lucas + Eduardo
+
+-- ============================================================================
+-- 14. Carga adicional: +10 pacientes (pessoa/paciente 20-29) e novos
+--     atendimentos com residentes e preceptores variados.
+-- ============================================================================
+
+-- 14.1 pessoa (10 novos pacientes: 20-29)
+INSERT INTO pessoa (id_pessoa, nome, cpf, data_nascimento, is_flamengo, telefone) VALUES
+(20, 'Roberto Alves',      '100.200.300-40', '1969-04-12', FALSE, '(83) 99120-0020'),
+(21, 'Juliana Castro',     '101.201.301-41', '1990-08-03', TRUE,  '(81) 99121-0021'),
+(22, 'Marcelo Tavares',    '102.202.302-42', '1975-12-19', FALSE, '(71) 99122-0022'),
+(23, 'Patricia Gomes',     '103.203.303-43', '1988-06-27', FALSE, '(21) 99123-0023'),
+(24, 'Rafael Moreira',     '104.204.304-44', '2001-02-15', TRUE,  '(11) 99124-0024'),
+(25, 'Beatriz Cardoso',    '105.205.305-45', '1996-10-08', FALSE, '(85) 99125-0025'),
+(26, 'Gustavo Ramos',      '106.206.306-46', '1983-03-30', TRUE,  '(31) 99126-0026'),
+(27, 'Larissa Fonseca',    '107.207.307-47', '1999-07-21', FALSE, '(41) 99127-0027'),
+(28, 'Anderson Pinto',     '108.208.308-48', '1972-11-02', FALSE, '(51) 99128-0028'),
+(29, 'Camila Duarte',      '109.209.309-49', '1993-05-17', TRUE,  '(62) 99129-0029');
+
+-- 14.2 paciente (10 registros)
+INSERT INTO paciente (id_pessoa, num_convenio, grupo_sanguineo, estado, cidade, bairro, logradouro, numero) VALUES
+(20, 'CONV-8001', 'A+',  'PB', 'Campina Grande', 'Catole',      'Rua das Acacias',    '150'),
+(21, 'CONV-8002', 'O+',  'PE', 'Recife',         'Boa Viagem',   'Av. Conselheiro',    '2200'),
+(22, 'CONV-8003', 'B-',  'BA', 'Salvador',       'Pituba',       'Rua Amazonas',       '87'),
+(23, 'CONV-8004', 'AB+', 'RJ', 'Niteroi',        'Icarai',       'Rua Gavioes',        '410'),
+(24, 'CONV-8005', 'O-',  'SP', 'Campinas',       'Cambui',       'Rua Coronel Quirino','980'),
+(25, 'CONV-8006', 'A-',  'CE', 'Fortaleza',      'Aldeota',      'Av. Santos Dumont',  '1330'),
+(26, 'CONV-8007', 'B+',  'MG', 'Belo Horizonte', 'Savassi',      'Rua Pernambuco',     '75'),
+(27, 'CONV-8008', 'AB-', 'PR', 'Curitiba',       'Batel',        'Av. do Batel',       '1600'),
+(28, 'CONV-8009', 'O+',  'RS', 'Porto Alegre',   'Moinhos',      'Rua Padre Chagas',   '220'),
+(29, 'CONV-8010', 'A+',  'GO', 'Goiania',        'Setor Bueno',  'Av. T-9',            '540');
+
+-- 14.3 alergia_paciente (algumas alergias nos novos pacientes)
+INSERT INTO alergia_paciente (id_pessoa, alergia) VALUES
+(21, 'Penicilina'),
+(24, 'Sulfa'),
+(26, 'Dipirona'),
+(29, 'Latex');
+
+-- 14.4 atendimento (14 novos registros: 25-38) — cada paciente com residentes
+--      e preceptores variados; alguns pacientes com mais de um atendimento.
+INSERT INTO atendimento (id_atendimento, data_hora, duracao_minutos, id_paciente, id_residente, id_preceptor) VALUES
+(25, '2026-07-02 09:00:00', 40, 20,  9, 15),   -- Roberto  + Camila   + Patricia
+(26, '2026-07-03 10:30:00', 30, 21, 11, 17),   -- Juliana  + Beatriz  + Adriana
+(27, '2026-07-04 14:00:00', 55, 22, 12, 18),   -- Marcelo  + Thiago   + Marcos
+(28, '2026-07-05 08:15:00', 25, 23, 13, 19),   -- Patricia + Isabela  + Sandra
+(29, '2026-07-06 11:00:00', 60, 24, 10, 16),   -- Rafael   + Lucas    + Eduardo
+(30, '2026-07-07 15:30:00', 35, 25,  8, 14),   -- Beatriz  + Vinicius Indio + Fernando
+(31, '2026-07-08 09:45:00', 45, 26,  9, 16),   -- Gustavo  + Camila   + Eduardo
+(32, '2026-07-09 13:00:00', 50, 27, 11, 15),   -- Larissa  + Beatriz  + Patricia
+(33, '2026-07-10 16:00:00', 20, 28, 12, 19),   -- Anderson + Thiago   + Sandra
+(34, '2026-07-11 08:00:00', 40, 29, 13, 17),   -- Camila D + Isabela  + Adriana
+(35, '2026-07-14 10:00:00', 30, 20, 10, 16),   -- Roberto  + Lucas    + Eduardo   (2o atend.)
+(36, '2026-07-15 09:30:00', 45, 22,  8, 14),   -- Marcelo  + Vinicius Indio + Fernando (2o atend.)
+(37, '2026-07-16 14:30:00', 55, 25, 13, 18),   -- Beatriz  + Isabela  + Marcos    (2o atend.)
+(38, '2026-07-17 11:15:00', 35, 27, 12, 19);   -- Larissa  + Thiago   + Sandra    (2o atend.)
+
+-- 14.5 procedimento_realizado (procedimentos dos novos atendimentos)
+INSERT INTO procedimento_realizado (id_atendimento, id_procedimento, quantidade, faturado, tempo_real_minutos, observacao) VALUES
+(25, 1, 1, TRUE,  14, 'Eletrocardiograma de rotina'),
+(25, 5, 1, FALSE,  6, 'Puncao venosa para coleta'),
+(26, 6, 1, TRUE,  12, 'Curativo simples'),
+(27, 3, 1, FALSE, 40, 'Sutura de ferimento em membro superior'),
+(28, 2, 1, TRUE,  18, 'Raio-X de torax'),
+(29, 4, 1, TRUE,  11, 'Intubacao orotraqueal de emergencia'),
+(30, 5, 2, FALSE,  7, 'Duas puncoes venosas'),
+(31, 1, 1, TRUE,  13, 'ECG de controle'),
+(32, 6, 1, FALSE, 10, 'Troca de curativo'),
+(33, 7, 1, TRUE,   9, 'Aspiracao de vias aereas'),
+(34, 2, 1, FALSE, 20, 'Raio-X de coluna'),
+(35, 3, 1, TRUE,  35, 'Sutura cirurgica'),
+(36, 1, 1, FALSE, 15, 'Eletrocardiograma no plantao'),
+(37, 6, 1, TRUE,  12, 'Curativo pos-operatorio'),
+(38, 5, 1, FALSE,  5, 'Acesso venoso rapido');
+
+-- 14.6 Procedimentos adicionais para enriquecer os atendimentos existentes
+INSERT INTO procedimento_realizado (id_atendimento, id_procedimento, quantidade, faturado, tempo_real_minutos, observacao) VALUES
+-- Atendimentos originais com procedimentos adicionais
+(1,  5, 1, FALSE,  8,  'Puncao para coleta de sangue adicional'),
+(3,  6, 1, FALSE, 10,  'Curativo apos sutura'),
+(5,  2, 1, FALSE, 18,  'Raio-X para monitoramento cardiaco'),
+(7,  6, 1, FALSE,  8,  'Curativo do local de aspiracao'),
+(8,  2, 1, FALSE, 20,  'Raio-X para descartar pneumonia'),
+(9,  3, 1, TRUE,  20,  'Sutura de ferimento adicional'),
+(10, 6, 1, FALSE, 15,  'Curativo pos-cirurgico'),
+(11, 1, 1, TRUE,  14,  'ECG no acompanhamento'),
+(12, 6, 1, FALSE,  8,  'Curativo de manutencao'),
+(13, 5, 1, FALSE,  6,  'Puncao para exames laboratoriais'),
+(14, 1, 1, FALSE, 12,  'ECG de controle'),
+(15, 2, 1, FALSE, 22,  'Raio-X de acompanhamento'),
+(16, 1, 1, FALSE, 15,  'ECG adicional'),
+(17, 2, 1, TRUE,  25,  'Raio-X de verificacao'),
+(18, 5, 1, FALSE,  7,  'Puncao para coleta'),
+(19, 3, 1, FALSE, 30,  'Sutura de ferimento'),
+(20, 6, 1, FALSE, 10,  'Curativo de manutencao'),
+(21, 2, 1, TRUE,  18,  'Raio-X de controle'),
+(22, 6, 1, FALSE,  12, 'Curativo pos-exame'),
+(23, 5, 1, TRUE,   7,  'Puncao venosa'),
+(24, 1, 1, FALSE, 13, 'ECG de monitoramento'),
+-- Novos atendimentos (25-38) com procedimentos complementares
+(25, 6, 1, FALSE, 10,  'Curativo apos coleta'),
+(26, 2, 1, TRUE,  15,  'Raio-X de torax'),
+(27, 1, 1, FALSE, 15,  'Eletrocardiograma pre-operatorio'),
+(27, 5, 1, FALSE,  6,  'Puncao para anestesia'),
+(28, 6, 1, FALSE, 10,  'Curativo apos raio-X'),
+(29, 6, 1, FALSE, 12,  'Curativo pos-intubacao'),
+(29, 5, 1, FALSE,  8,  'Puncao para medicacao'),
+(30, 6, 1, FALSE, 10,  'Curativo das multiplas puncoes'),
+(31, 5, 1, FALSE,  7,  'Puncao venosa para coleta'),
+(32, 1, 1, FALSE, 14,  'ECG de acompanhamento'),
+(32, 5, 1, FALSE,  5,  'Puncao para medicacao'),
+(33, 6, 1, FALSE,  8,  'Curativo apos aspiracao'),
+(34, 6, 1, FALSE, 10,  'Curativo apos raio-X'),
+(35, 6, 1, FALSE, 10,  'Curativo pos-sutura'),
+(36, 5, 1, FALSE,  6,  'Puncao para coleta'),
+(37, 1, 1, FALSE, 15,  'ECG de acompanhamento'),
+(37, 5, 1, FALSE,  7,  'Puncao para medicacao'),
+(38, 6, 1, FALSE, 10,  'Curativo apos puncao');

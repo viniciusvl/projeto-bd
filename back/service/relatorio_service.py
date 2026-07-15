@@ -5,6 +5,10 @@ def ranking_residentes():
     return relatorio_repository.ranking_residentes()
 
 
+def ranking_preceptores():
+    return relatorio_repository.ranking_preceptores()
+
+
 def preceptores_supervisao(ano, mes):
     return relatorio_repository.preceptores_supervisao(ano, mes)
 

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Info, UserCog } from "lucide-react";
+import { Info, Trophy, UserCog } from "lucide-react";
 import { AppLayout } from "../../components/layout/AppLayout";
 import { Card } from "../../components/ui/Card";
 import { Badge } from "../../components/ui/Badge";
@@ -8,7 +8,7 @@ import { EmptyState } from "../../components/ui/EmptyState";
 import { useFetch } from "../../lib/useFetch";
 import { api } from "../../api/client";
 import { MESES } from "../../lib/format";
-import type { PreceptorSupervisao } from "../../types";
+import type { PreceptorSupervisao, RankingPreceptor } from "../../types";
 
 const anoBase = new Date().getFullYear();
 const anos = Array.from(
@@ -25,11 +25,56 @@ export function PreceptoresPage() {
   );
   const lista = data ?? [];
 
+  const ranking = useFetch<RankingPreceptor[]>(() => api.rankingPreceptores());
+  const ranks = ranking.data ?? [];
+
   return (
     <AppLayout
       title="Relatório — Preceptores"
-      subtitle="Preceptores que supervisionaram mais de 5 atendimentos no mês selecionado"
+      subtitle="Ranking de consultas supervisionadas e preceptores por mês"
     >
+      <Card
+        icon={<Trophy className="h-5 w-5" />}
+        title="Ranking de preceptores por consultas"
+        subtitle="Total de atendimentos supervisionados (geral)"
+        className="mb-6"
+      >
+        {ranking.loading ? (
+          <Spinner />
+        ) : ranking.error ? (
+          <EmptyState title="Erro ao carregar" description={ranking.error} />
+        ) : ranks.length === 0 ? (
+          <EmptyState title="Sem dados" />
+        ) : (
+          <ol className="space-y-2">
+            {ranks.map((r, i) => (
+              <li
+                key={`${r.nome}-${i}`}
+                className="flex items-center gap-3 rounded-lg border border-slate-100 px-3 py-2"
+              >
+                <span
+                  className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold ${
+                    i === 0
+                      ? "bg-amber-100 text-amber-700"
+                      : i === 1
+                        ? "bg-slate-200 text-slate-600"
+                        : i === 2
+                          ? "bg-orange-100 text-orange-700"
+                          : "bg-brand-50 text-brand-700"
+                  }`}
+                >
+                  {i + 1}
+                </span>
+                <span className="flex-1 font-medium text-slate-700">{r.nome}</span>
+                <span className="text-sm font-bold text-slate-800">
+                  {r.total} consulta(s)
+                </span>
+              </li>
+            ))}
+          </ol>
+        )}
+      </Card>
+
       <div className="mb-6 flex items-start gap-3 rounded-xl border border-brand-100 bg-brand-50 px-4 py-3 text-sm text-brand-800">
         <Info className="mt-0.5 h-4 w-4 shrink-0" />
         <p>

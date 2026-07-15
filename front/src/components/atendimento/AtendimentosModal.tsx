@@ -121,8 +121,16 @@ export function AtendimentosModal({ paciente, open, onClose }: Props) {
                   <Clock className="h-4 w-4" /> {a.duracao_minutos} min
                 </span>
                 <span className="flex items-center gap-1.5 text-slate-500">
-                  <UserRound className="h-4 w-4" /> Residente #{a.id_residente} · Preceptor #
-                  {a.id_preceptor}
+                  <UserRound className="h-4 w-4" /> Residente:{" "}
+                  <span className="font-medium text-slate-700">
+                    {a.nome_residente ?? `#${a.id_residente}`}
+                  </span>
+                </span>
+                <span className="flex items-center gap-1.5 text-slate-500">
+                  <Stethoscope className="h-4 w-4" /> Preceptor:{" "}
+                  <span className="font-medium text-slate-700">
+                    {a.nome_preceptor ?? `#${a.id_preceptor}`}
+                  </span>
                 </span>
               </div>
               <div className="p-3">

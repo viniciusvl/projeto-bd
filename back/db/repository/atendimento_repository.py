@@ -25,7 +25,22 @@ def criar_atendimento(data_hora, duracao_minutos, id_paciente, id_residente, id_
 
 
 def listar_por_paciente(id_paciente):
-    sql = "SELECT * FROM atendimento WHERE (id_paciente = %s) ORDER BY data_hora"
+    sql = """
+        SELECT
+            a.id_atendimento,
+            a.data_hora,
+            a.duracao_minutos,
+            a.id_paciente,
+            a.id_residente,
+            a.id_preceptor,
+            res.nome AS nome_residente,
+            prec.nome AS nome_preceptor
+        FROM atendimento a
+        JOIN pessoa res ON res.id_pessoa = a.id_residente
+        JOIN pessoa prec ON prec.id_pessoa = a.id_preceptor
+        WHERE a.id_paciente = %s
+        ORDER BY a.data_hora
+    """
     return executar_query(sql, (id_paciente,), fetch=True)
 
 
