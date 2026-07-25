@@ -332,3 +332,47 @@ INSERT INTO procedimento_realizado (id_atendimento, id_procedimento, quantidade,
 (37, 1, 1, FALSE, 15,  'ECG de acompanhamento'),
 (37, 5, 1, FALSE,  7,  'Puncao para medicacao'),
 (38, 6, 1, FALSE, 10,  'Curativo apos puncao');
+
+-- ============================================================================
+-- 15. Dados da Etapa 2 — internações e preenchimento das colunas novas.
+--     Idempotente: INSERT IGNORE e UPDATE ... WHERE coluna IS NULL.
+-- ============================================================================
+
+-- 15.1 internacao (internações em aberto = data_saida NULL; e algumas fechadas)
+INSERT IGNORE INTO internacao
+    (id_internacao, id_paciente, id_unidade, data_entrada, data_saida, motivo) VALUES
+(1,  1, 1, '2026-07-01 08:00:00', NULL,                  'Observação cardiológica pós-arritmia'),
+(2,  4, 4, '2026-06-20 10:00:00', '2026-06-25 09:00:00', 'Pós-operatório de cirurgia geral'),
+(3, 20, 2, '2026-07-10 14:00:00', NULL,                  'Quadro respiratório em investigação'),
+(4, 24, 1, '2026-07-12 22:30:00', NULL,                  'Insuficiência respiratória aguda'),
+(5,  5, 3, '2026-06-28 09:15:00', '2026-07-02 11:00:00', 'Acompanhamento pediátrico'),
+(6, 21, 2, '2026-07-15 07:45:00', NULL,                  'Dor torácica a esclarecer');
+
+-- 15.2 atendimento.id_unidade — deriva da escala do residente; padrão = Pronto Socorro (2)
+UPDATE atendimento a
+JOIN (
+    SELECT id_residente, MIN(id_unidade) AS id_unidade
+    FROM escala
+    GROUP BY id_residente
+) e ON e.id_residente = a.id_residente
+SET a.id_unidade = e.id_unidade
+WHERE a.id_unidade IS NULL;
+
+UPDATE atendimento SET id_unidade = 2 WHERE id_unidade IS NULL;
+
+-- 15.3 procedimento_realizado.data_hora_inicio — usa o horário do atendimento
+UPDATE procedimento_realizado pr
+JOIN atendimento a ON a.id_atendimento = pr.id_atendimento
+SET pr.data_hora_inicio = a.data_hora
+WHERE pr.data_hora_inicio IS NULL;
+
+-- 15.4 procedimento.media_tempo_procedimento — média realizada inicial
+UPDATE procedimento p
+JOIN (
+    SELECT id_procedimento, ROUND(AVG(tempo_real_minutos), 2) AS media
+    FROM procedimento_realizado
+    WHERE tempo_real_minutos IS NOT NULL
+    GROUP BY id_procedimento
+) m ON m.id_procedimento = p.id_procedimento
+SET p.media_tempo_procedimento = m.media
+WHERE p.media_tempo_procedimento IS NULL;

@@ -8,8 +8,6 @@ services:
       - "3307:3306"
     volumes:
       - db_data:/var/lib/mysql
-      - ./scripts/hospital.sql:/docker-entrypoint-initdb.d/01_hospital.sql:ro
-      - ./scripts/data.sql:/docker-entrypoint-initdb.d/02_data.sql:ro
     healthcheck:
       # 127.0.0.1 força TCP: com "localhost" o ping passa pelo socket e responde
       # durante o init, liberando o back antes do banco estar de fato pronto.

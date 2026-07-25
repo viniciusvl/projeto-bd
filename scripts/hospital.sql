@@ -118,7 +118,8 @@ CREATE TABLE procedimento (
     id_procedimento       INT         NOT NULL AUTO_INCREMENT,
     codigo                VARCHAR(20) NOT NULL,
     nome                  VARCHAR(100) NOT NULL,
-    tempo_medio_minutos   INT         NOT NULL,
+    tempo_medio_minutos   INT         NOT NULL,             -- tempo PREVISTO
+    media_tempo_procedimento DECIMAL(8,2) NULL DEFAULT NULL, -- média REALIZADA (Etapa 2)
     risco                 ENUM('baixo', 'medio', 'alto') NOT NULL,
 
     CONSTRAINT pk_procedimento PRIMARY KEY (id_procedimento),
@@ -145,6 +146,7 @@ CREATE TABLE atendimento (
     id_paciente      INT       NOT NULL,
     id_residente     INT       NOT NULL,
     id_preceptor     INT       NOT NULL,
+    id_unidade       INT       NULL,          -- unidade do atendimento (Etapa 2)
 
     CONSTRAINT pk_atendimento PRIMARY KEY (id_atendimento),
     CONSTRAINT chk_atendimento_duracao CHECK (duracao_minutos > 0),
@@ -159,7 +161,13 @@ CREATE TABLE atendimento (
     CONSTRAINT fk_atendimento_preceptor FOREIGN KEY (id_preceptor)
         REFERENCES preceptor (id_profissional)
         ON DELETE RESTRICT
-        ON UPDATE CASCADE
+        ON UPDATE CASCADE,
+    CONSTRAINT fk_atendimento_unidade FOREIGN KEY (id_unidade)
+        REFERENCES unidade (id_unidade)
+        ON DELETE SET NULL
+        ON UPDATE CASCADE,
+    -- índice de apoio às agregações por unidade/mês (Etapa 2, Passo 2)
+    INDEX idx_atendimento_unidade_data (id_unidade, data_hora)
 );
 
 -- 12. Tabela: procedimento_realizado (N:M entre atendimento e procedimento)
@@ -169,6 +177,7 @@ CREATE TABLE procedimento_realizado (
     quantidade           INT  NOT NULL DEFAULT 1,
     faturado             BOOLEAN NOT NULL DEFAULT FALSE,
     tempo_real_minutos   INT,
+    data_hora_inicio     DATETIME NULL,   -- início do procedimento (Etapa 2)
     observacao           TEXT,
 
     CONSTRAINT pk_procedimento_realizado PRIMARY KEY (id_atendimento, id_procedimento),
@@ -191,9 +200,11 @@ CREATE TABLE escala (
     turno           ENUM('manha', 'tarde', 'noite') NOT NULL,
     id_residente    INT       NOT NULL,
     id_preceptor    INT       NOT NULL,
+    versao          INT       NOT NULL DEFAULT 1,   -- lock otimista (Etapa 2)
 
     CONSTRAINT pk_escala PRIMARY KEY (id_escala),
-    CONSTRAINT uq_escala_unidade_turno UNIQUE (id_unidade, dia_semana, turno),
+    -- UNIQUE revisada (Etapa 2): inclui id_residente, conforme o enunciado
+    CONSTRAINT uq_escala_unidade_turno_residente UNIQUE (id_unidade, dia_semana, turno, id_residente),
     CONSTRAINT fk_escala_unidade FOREIGN KEY (id_unidade)
         REFERENCES unidade (id_unidade)
         ON DELETE RESTRICT
@@ -206,4 +217,56 @@ CREATE TABLE escala (
         REFERENCES preceptor (id_profissional)
         ON DELETE RESTRICT
         ON UPDATE CASCADE
+);
+
+-- ============================================================================
+-- Tabelas adicionadas na Etapa 2 (Passo 1)
+-- ============================================================================
+
+-- 14. Tabela: internacao (habilita a view de pacientes internados)
+--     data_saida NULL = internação em aberto.
+CREATE TABLE internacao (
+    id_internacao   INT          NOT NULL AUTO_INCREMENT,
+    id_paciente     INT          NOT NULL,
+    id_unidade      INT          NOT NULL,
+    data_entrada    DATETIME     NOT NULL,
+    data_saida      DATETIME     NULL,
+    motivo          VARCHAR(255) NULL,
+
+    CONSTRAINT pk_internacao PRIMARY KEY (id_internacao),
+    CONSTRAINT fk_internacao_paciente FOREIGN KEY (id_paciente)
+        REFERENCES paciente (id_pessoa)
+        ON DELETE RESTRICT
+        ON UPDATE CASCADE,
+    CONSTRAINT fk_internacao_unidade FOREIGN KEY (id_unidade)
+        REFERENCES unidade (id_unidade)
+        ON DELETE RESTRICT
+        ON UPDATE CASCADE,
+    CONSTRAINT chk_internacao_datas
+        CHECK (data_saida IS NULL OR data_saida >= data_entrada),
+    INDEX idx_internacao_data_saida (data_saida)
+);
+
+-- 15. Tabela: auditoria_atendimento (trilha de mudanças em atendimento)
+--     Colunas antigo/novo normalizadas (1FN); sem FK para sobreviver ao DELETE.
+CREATE TABLE auditoria_atendimento (
+    id_auditoria            BIGINT       NOT NULL AUTO_INCREMENT,
+    id_atendimento          INT          NULL,
+    operacao                ENUM('INSERT', 'UPDATE', 'DELETE') NOT NULL,
+    data_hora_antigo        DATETIME     NULL,
+    duracao_minutos_antigo  INT          NULL,
+    id_paciente_antigo      INT          NULL,
+    id_residente_antigo     INT          NULL,
+    id_preceptor_antigo     INT          NULL,
+    id_unidade_antigo       INT          NULL,
+    data_hora_novo          DATETIME     NULL,
+    duracao_minutos_novo    INT          NULL,
+    id_paciente_novo        INT          NULL,
+    id_residente_novo       INT          NULL,
+    id_preceptor_novo       INT          NULL,
+    id_unidade_novo         INT          NULL,
+    usuario_db              VARCHAR(128) NULL,
+    registrado_em           DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT pk_auditoria_atendimento PRIMARY KEY (id_auditoria)
 );

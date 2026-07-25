@@ -1,4 +1,5 @@
 import os
+from contextlib import asynccontextmanager
 
 import uvicorn
 from fastapi import FastAPI, Request
@@ -6,14 +7,22 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from api.routers import atendimento, paciente, procedimento, profissional, relatorio
+from db.connect import engine
 from exceptions.errors import AppException
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    yield
+    engine.dispose()
+
 
 app = FastAPI(
     title="API do sistema de gerenciamento hospitalar Dra. Yuska",
     root_path=os.getenv("ROOT_PATH", ""),
+    lifespan=lifespan,
 )
 
-# Libera o acesso a partir do frontend (browser chama a API de outra origem).
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
