@@ -1,3 +1,5 @@
+DELIMITER $$
+
 CREATE TRIGGER trg_check_sobreposicao_escala_insert
 BEFORE INSERT ON escala
 FOR EACH ROW
@@ -15,7 +17,7 @@ BEGIN
     SIGNAL SQLSTATE '45000'
     SET MESSAGE_TEXT = 'O residente ja foi escalado em outra unidade neste momento';
   END IF;
-END;
+END$$
 
 CREATE TRIGGER trg_check_sobreposicao_escala_update
 BEFORE UPDATE ON escala
@@ -35,7 +37,7 @@ BEGIN
     SIGNAL SQLSTATE '45000'
     SET MESSAGE_TEXT = 'O residente ja foi escalado em outra unidade neste momento';
   END IF;
-END;
+END$$
 
 CREATE TRIGGER trg_audita_atendimento_insert
 AFTER INSERT ON atendimento
@@ -45,7 +47,7 @@ BEGIN
     id_residente_novo, id_preceptor_novo, id_unidade_novo, usuario_db)
     VALUES (NEW.id_atendimento, 'INSERT', NEW.data_hora, NEW.duracao_minutos, NEW.id_paciente, NEW.id_residente,
     NEW.id_preceptor, NEW.id_unidade, USER());
-END;
+END$$
 
 CREATE TRIGGER trg_audita_atendimento_update
 AFTER UPDATE ON atendimento
@@ -61,7 +63,7 @@ BEGIN
     OLD.id_residente, OLD.id_preceptor, OLD.id_unidade,
     NEW.data_hora, NEW.duracao_minutos, NEW.id_paciente,
     NEW.id_residente, NEW.id_preceptor, NEW.id_unidade, USER());
-END;
+END$$
 
 CREATE TRIGGER trg_audita_atendimento_delete
 AFTER DELETE ON atendimento
@@ -74,7 +76,7 @@ BEGIN
     VALUES (OLD.id_atendimento, 'DELETE',
     OLD.data_hora, OLD.duracao_minutos, OLD.id_paciente,
     OLD.id_residente, OLD.id_preceptor, OLD.id_unidade, USER());
-END;
+END$$
 
 CREATE TRIGGER trg_atualiza_media_procedimentos_insert
 AFTER INSERT ON procedimento_realizado
@@ -87,7 +89,7 @@ BEGIN
         WHERE id_procedimento = NEW.id_procedimento
     )
     WHERE id_procedimento = NEW.id_procedimento;
-END;
+END$$
 
 CREATE TRIGGER trg_atualiza_media_procedimentos_update
 AFTER UPDATE ON procedimento_realizado
@@ -100,7 +102,7 @@ BEGIN
         WHERE id_procedimento = NEW.id_procedimento
     )
     WHERE id_procedimento = NEW.id_procedimento;
-END;
+END$$
 
 CREATE TRIGGER trg_atualiza_media_procedimentos_delete
 AFTER DELETE ON procedimento_realizado
@@ -113,4 +115,6 @@ BEGIN
         WHERE id_procedimento = OLD.id_procedimento
     )
     WHERE id_procedimento = OLD.id_procedimento;
-END;
+END$$
+
+DELIMITER ;

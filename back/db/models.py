@@ -254,6 +254,8 @@ class ProcedimentoRealizado(Base):
     procedimento: Mapped["Procedimento"] = relationship(back_populates="realizacoes")
 
 
+from sqlalchemy.orm import versioned
+
 class Escala(Base):
     __tablename__ = "escala"
     __table_args__ = (
@@ -282,6 +284,10 @@ class Escala(Base):
         nullable=False,
     )
     versao: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+
+    __mapper_args__ = {
+        "version_id_col": versao
+    }
 
     unidade: Mapped["Unidade"] = relationship(
         back_populates="escalas", foreign_keys=[id_unidade]
