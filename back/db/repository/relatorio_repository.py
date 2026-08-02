@@ -1,12 +1,12 @@
 """Repository de relatórios/estatísticas, migrado de mysql.connector/executar_query para SQLAlchemy ORM."""
 
 from typing import Optional
-
-from sqlalchemy import exists, extract, func, select
+ 
+from sqlalchemy import case, exists, extract, func, select
 from sqlalchemy.orm import Session
-
+ 
 from db.views import get_view
-from db.models import (
+from models import (
     Atendimento,
     Escala,
     Paciente,
@@ -16,6 +16,7 @@ from db.models import (
     Residente,
     Unidade,
 )
+
 
 
 def ranking_residentes(session: Session):
@@ -90,6 +91,68 @@ def pacientes_sem_risco_alto(session: Session):
         .order_by(Paciente.nome)
     )
     return session.execute(stmt).all()
+
+# Consulta nova da Etapa 2
+def preceptores_de_residentes_que_atenderam_flamenguistas(session: Session):
+    """
+    Preceptores que supervisionaram residentes que atenderam pacientes
+    flamenguistas (is_flamengo = true).
+ 
+    Como cada linha de `atendimento` já amarra residente + preceptor +
+    paciente na mesma consulta, basta filtrar os atendimentos cujo
+    paciente é flamenguista e pegar os preceptores distintos envolvidos.
+    """
+    stmt = (
+        select(Preceptor.nome.label("nome_preceptor"))  # nome herdado de Pessoa
+        .distinct()
+        .select_from(Atendimento)
+        .join(Preceptor, Atendimento.id_preceptor == Preceptor.id_profissional)
+        .join(Paciente, Paciente.id_pessoa == Atendimento.id_paciente)
+        .where(Paciente.is_flamengo.is_(True))
+        .order_by(Preceptor.nome)
+    )
+    return session.execute(stmt).all()
+ 
+# Consulta nova da Etapa 2
+def percentual_alto_risco_por_residente(session: Session):
+    total_expr = func.coalesce(func.sum(ProcedimentoRealizado.quantidade), 0)
+    alto_risco_expr = func.coalesce(
+        func.sum(
+            case(
+                (func.lower(Procedimento.risco) == "alto", ProcedimentoRealizado.quantidade),
+                else_=0,
+            )
+        ),
+        0,
+    )
+    percentual_expr = case(
+        (total_expr == 0, 0.0),
+        else_=(alto_risco_expr * 100.0 / total_expr),
+    )
+ 
+    stmt = (
+        select(
+            Residente.nome.label("residente"),  # nome herdado de Pessoa
+            total_expr.label("total_procedimentos"),
+            alto_risco_expr.label("procedimentos_alto_risco"),
+            percentual_expr.label("percentual_alto_risco"),
+        )
+        .outerjoin(Atendimento, Atendimento.id_residente == Residente.id_profissional)
+        .outerjoin(
+            ProcedimentoRealizado,
+            ProcedimentoRealizado.id_atendimento == Atendimento.id_atendimento,
+        )
+        .outerjoin(
+            Procedimento,
+            Procedimento.id_procedimento == ProcedimentoRealizado.id_procedimento,
+        )
+        .group_by(Residente.id_profissional, Residente.nome)
+        .order_by(percentual_expr.desc())
+    )
+    return session.execute(stmt).all()
+ 
+
+# Estas 3 últimas queries consultam views do banco
 
 def pacientes_internados(session: Session):
     tabela = get_view(session.get_bind(), "vw_pacientes_internados")

@@ -1,8 +1,8 @@
 from datetime import datetime
 from typing import Optional
-
+ 
 from sqlalchemy import exists, func, literal_column, select
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload, selectinload
 
 from exceptions.repository_exceptions import EntidadeRelacionadaInexistenteError
 from db.models import (
@@ -12,7 +12,6 @@ from db.models import (
     ProcedimentoRealizado,
     Residente,
 )
-
 
 def criar_atendimento(
     session: Session,
@@ -130,3 +129,49 @@ def tempo_medio_espera(session: Session):
         inicio_primeiro_procedimento.c.id_atendimento == Atendimento.id_atendimento,
     )
     return session.execute(stmt).scalar()
+
+# Consulta nova da etapa 2
+def ultimo_atendimento_por_paciente(session: Session):
+    ranked = (
+        select(
+            Atendimento.id_atendimento,
+            func.row_number()
+            .over(
+                partition_by=Atendimento.id_paciente,
+                order_by=Atendimento.data_hora.desc(),
+            )
+            .label("rn"),
+        )
+    ).subquery()
+ 
+    stmt = (
+        select(Atendimento)
+        .join(ranked, ranked.c.id_atendimento == Atendimento.id_atendimento)
+        .where(ranked.c.rn == 1)
+        .options(
+            joinedload(Atendimento.paciente),
+            joinedload(Atendimento.residente),
+            joinedload(Atendimento.preceptor),
+            selectinload(Atendimento.procedimentos_realizados).joinedload(
+                ProcedimentoRealizado.procedimento
+            ),
+        )
+        .order_by(Atendimento.data_hora.desc())
+    )
+ 
+    atendimentos = session.scalars(stmt).unique().all()
+ 
+    resultado = []
+    for atend in atendimentos:
+        resultado.append(
+            {
+                "paciente": atend.paciente.nome,
+                "data_hora": atend.data_hora,
+                "residente": atend.residente.nome,
+                "preceptor": atend.preceptor.nome,
+                "procedimentos": [
+                    pr.procedimento.nome for pr in atend.procedimentos_realizados
+                ],
+            }
+        )
+    return resultado
