@@ -1,113 +1,114 @@
-from db.connect import executar_query
+"""Repository de relatórios/estatísticas, migrado de mysql.connector/executar_query para SQLAlchemy ORM."""
+
+from typing import Optional
+
+from sqlalchemy import exists, extract, func, select
+from sqlalchemy.orm import Session
+
+from db.views import get_view
+from db.models import (
+    Atendimento,
+    Escala,
+    Paciente,
+    Preceptor,
+    Procedimento,
+    ProcedimentoRealizado,
+    Residente,
+    Unidade,
+)
 
 
-def ranking_residentes():
-    sql = """
-        SELECT
-            p.nome AS nome,
-            COUNT(atend.id_atendimento) AS total
-        FROM atendimento atend
-        INNER JOIN residente r ON atend.id_residente = r.id_profissional
-        INNER JOIN profissional prof ON r.id_profissional = prof.id_pessoa
-        INNER JOIN pessoa p ON prof.id_pessoa = p.id_pessoa
-        GROUP BY p.id_pessoa, p.nome
-        ORDER BY total DESC
-    """
-    return executar_query(sql, fetch=True)
+def ranking_residentes(session: Session):
+    stmt = (
+        select(Residente.nome, func.count(Atendimento.id_atendimento).label("total"))
+        .join(Residente, Atendimento.id_residente == Residente.id_profissional)
+        .group_by(Residente.id_profissional, Residente.nome)
+        .order_by(func.count(Atendimento.id_atendimento).desc())
+    )
+    return session.execute(stmt).all()
 
 
-def ranking_preceptores():
-    sql = """
-        SELECT
-            p.nome AS nome,
-            COUNT(atend.id_atendimento) AS total
-        FROM atendimento atend
-        INNER JOIN preceptor prec ON atend.id_preceptor = prec.id_profissional
-        INNER JOIN profissional prof ON prec.id_profissional = prof.id_pessoa
-        INNER JOIN pessoa p ON prof.id_pessoa = p.id_pessoa
-        GROUP BY p.id_pessoa, p.nome
-        ORDER BY total DESC
-    """
-    return executar_query(sql, fetch=True)
+def ranking_preceptores(session: Session):
+    stmt = (
+        select(Preceptor.nome, func.count(Atendimento.id_atendimento).label("total"))
+        .join(Preceptor, Atendimento.id_preceptor == Preceptor.id_profissional)
+        .group_by(Preceptor.id_profissional, Preceptor.nome)
+        .order_by(func.count(Atendimento.id_atendimento).desc())
+    )
+    return session.execute(stmt).all()
 
 
-def preceptores_supervisao(ano, mes):
-    sql = """
-        SELECT
-            p.nome AS nome_preceptor,
-            COUNT(atend.id_atendimento) AS total_supervisoes
-        FROM atendimento atend
-        INNER JOIN preceptor prec ON atend.id_preceptor = prec.id_profissional
-        INNER JOIN profissional prof ON prec.id_profissional = prof.id_pessoa
-        INNER JOIN pessoa p ON prof.id_pessoa = p.id_pessoa
-        WHERE YEAR(atend.data_hora) = %s
-          AND MONTH(atend.data_hora) = %s
-        GROUP BY p.id_pessoa, p.nome
-        HAVING COUNT(atend.id_atendimento) > 5
-        ORDER BY total_supervisoes DESC
-    """
-    return executar_query(sql, (ano, mes), fetch=True)
-
-
-def plantoes_por_unidade():
-    sql = """
-        SELECT
-            u.nome AS unidade,
-            p.nome AS residente,
-            COUNT(*) AS quantidade_plantoes
-        FROM escala e
-        JOIN unidade u ON u.id_unidade = e.id_unidade
-        JOIN residente r ON r.id_profissional = e.id_residente
-        JOIN pessoa p ON p.id_pessoa = r.id_profissional
-        GROUP BY u.nome, p.nome
-        ORDER BY u.nome, quantidade_plantoes DESC
-    """
-    return executar_query(sql, fetch=True)
-
-
-def pacientes_sem_risco_alto():
-    sql = """
-        SELECT
-            p.nome AS paciente
-        FROM paciente pa
-        JOIN pessoa p ON p.id_pessoa = pa.id_pessoa
-        WHERE NOT EXISTS (
-            SELECT 1
-            FROM atendimento atend
-            JOIN procedimento_realizado pr ON pr.id_atendimento = atend.id_atendimento
-            JOIN procedimento proc ON proc.id_procedimento = pr.id_procedimento
-            WHERE atend.id_paciente = pa.id_pessoa
-              AND proc.risco = 'alto'
+def preceptores_supervisao(session: Session, ano: int, mes: int):
+    stmt = (
+        select(
+            Preceptor.nome.label("nome_preceptor"),
+            func.count(Atendimento.id_atendimento).label("total_supervisoes"),
         )
-        ORDER BY p.nome
-    """
-    return executar_query(sql, fetch=True)
+        .join(Preceptor, Atendimento.id_preceptor == Preceptor.id_profissional)
+        .where(
+            extract("year", Atendimento.data_hora) == ano,
+            extract("month", Atendimento.data_hora) == mes,
+        )
+        .group_by(Preceptor.id_profissional, Preceptor.nome)
+        .having(func.count(Atendimento.id_atendimento) > 5)
+        .order_by(func.count(Atendimento.id_atendimento).desc())
+    )
+    return session.execute(stmt).all()
 
 
-# --- Views ---
+def plantoes_por_unidade(session: Session):
+    stmt = (
+        select(
+            Unidade.nome.label("unidade"),
+            Residente.nome.label("residente"),
+            func.count().label("quantidade_plantoes"),
+        )
+        .select_from(Escala)
+        .join(Unidade, Unidade.id_unidade == Escala.id_unidade)
+        .join(Residente, Residente.id_profissional == Escala.id_residente)
+        .group_by(Unidade.nome, Residente.nome)
+        .order_by(Unidade.nome, func.count().desc())
+    )
+    return session.execute(stmt).all()
 
-def pacientes_internados():
-    """Consulta vw_pacientes_internados."""
-    return executar_query("SELECT * FROM vw_pacientes_internados", fetch=True)
+
+def pacientes_sem_risco_alto(session: Session):
+    subquery = (
+        select(1)
+        .select_from(Atendimento)
+        .join(ProcedimentoRealizado, ProcedimentoRealizado.id_atendimento == Atendimento.id_atendimento)
+        .join(Procedimento, Procedimento.id_procedimento == ProcedimentoRealizado.id_procedimento)
+        .where(
+            Atendimento.id_paciente == Paciente.id_pessoa,
+            func.lower(Procedimento.risco) == "alto",
+        )
+        .correlate(Paciente)
+    )
+    stmt = (
+        select(Paciente.nome.label("paciente"))
+        .where(~exists(subquery))
+        .order_by(Paciente.nome)
+    )
+    return session.execute(stmt).all()
+
+def pacientes_internados(session: Session):
+    tabela = get_view(session.get_bind(), "vw_pacientes_internados")
+    stmt = select(tabela)
+    return session.execute(stmt).all()
 
 
-def residentes_sem_supervisor():
-    """Consulta vw_residentes_sem_supervisor."""
-    return executar_query("SELECT * FROM vw_residentes_sem_supervisor", fetch=True)
+def residentes_sem_supervisor(session: Session):
+    tabela = get_view(session.get_bind(), "vw_residentes_sem_supervisor")
+    stmt = select(tabela)
+    return session.execute(stmt).all()
 
 
-def estatisticas_mensais(ano=None, mes=None):
-    """Consulta vw_estatisticas_atendimentos_mensal com filtros opcionais."""
-    filtros = []
-    params = []
+def estatisticas_mensais(session: Session, ano: Optional[int] = None, mes: Optional[int] = None):
+    tabela = get_view(session.get_bind(), "vw_estatisticas_atendimentos_mensal")
+    stmt = select(tabela)
     if ano is not None:
-        filtros.append("ano = %s")
-        params.append(ano)
+        stmt = stmt.where(tabela.c.ano == ano)
     if mes is not None:
-        filtros.append("mes = %s")
-        params.append(mes)
-
-    where = f"WHERE {' AND '.join(filtros)}" if filtros else ""
-    sql = f"SELECT * FROM vw_estatisticas_atendimentos_mensal {where} ORDER BY ano DESC, mes DESC"
-    return executar_query(sql, tuple(params), fetch=True)
-
+        stmt = stmt.where(tabela.c.mes == mes)
+    stmt = stmt.order_by(tabela.c.ano.desc(), tabela.c.mes.desc())
+    return session.execute(stmt).all()

@@ -1,85 +1,132 @@
-import json
+from datetime import datetime
+from typing import Optional
 
-from db.connect import executar_query, get_connection
+from sqlalchemy import exists, func, literal_column, select
+from sqlalchemy.orm import Session
+
+from exceptions.repository_exceptions import EntidadeRelacionadaInexistenteError
+from db.models import (
+    Atendimento,
+    Paciente,
+    Preceptor,
+    ProcedimentoRealizado,
+    Residente,
+)
 
 
-def criar_atendimento(data_hora, duracao_minutos, id_paciente, id_residente,
-                      id_preceptor, id_unidade, procedimentos: list):
-    """Chama sp_registrar_atendimento_completo via variáveis de sessão MySQL."""
-    procedimentos_json = json.dumps(procedimentos) if procedimentos else None
-    conn = get_connection()
-    try:
-        cursor = conn.cursor(dictionary=True)
-        cursor.execute(
-            "CALL sp_registrar_atendimento_completo(%s, %s, %s, %s, %s, %s, %s, @novo_id)",
-            (data_hora, duracao_minutos, id_paciente, id_residente,
-             id_preceptor, id_unidade, procedimentos_json),
+def criar_atendimento(
+    session: Session,
+    data_hora: datetime,
+    duracao_minutos: int,
+    id_paciente: int,
+    id_residente: int,
+    id_preceptor: int,
+    id_unidade: Optional[int] = None,
+    procedimentos: Optional[list[dict]] = None,
+) -> int:
+
+    paciente_existe = session.scalar(select(exists().where(Paciente.id_pessoa == id_paciente)))
+    if not paciente_existe:
+        raise EntidadeRelacionadaInexistenteError(f"Paciente {id_paciente} não encontrado.")
+
+    residente_existe = session.scalar(
+        select(exists().where(Residente.id_profissional == id_residente))
+    )
+    if not residente_existe:
+        raise EntidadeRelacionadaInexistenteError(f"Residente {id_residente} não encontrado.")
+
+    preceptor_existe = session.scalar(
+        select(exists().where(Preceptor.id_profissional == id_preceptor))
+    )
+    if not preceptor_existe:
+        raise EntidadeRelacionadaInexistenteError(f"Preceptor {id_preceptor} não encontrado.")
+
+    novo_atendimento = Atendimento(
+        data_hora=data_hora,
+        duracao_minutos=duracao_minutos,
+        id_paciente=id_paciente,
+        id_residente=id_residente,
+        id_preceptor=id_preceptor,
+        id_unidade=id_unidade,
+    )
+    session.add(novo_atendimento)
+    session.flush()  # popula novo_atendimento.id_atendimento sem commitar
+
+    for item in procedimentos or []:
+        session.add(
+            ProcedimentoRealizado(
+                id_atendimento=novo_atendimento.id_atendimento,
+                id_procedimento=item["id_procedimento"],
+                quantidade=item.get("quantidade", 1),
+                tempo_real_minutos=item.get("tempo_real_minutos"),
+                data_hora_inicio=item.get("data_hora_inicio"),
+                observacao=item.get("observacao"),
+            )
         )
-        # Consome todos os result sets da procedure antes de executar outro SELECT
-        while cursor.nextset():
-            pass
-        cursor.execute("SELECT @novo_id AS novo_id")
-        row = cursor.fetchone()
-        conn.commit()
-        return row["novo_id"] if row else None
-    except Exception:
-        conn.rollback()
-        raise
-    finally:
-        conn.close()
+
+    return novo_atendimento.id_atendimento
 
 
-def listar_por_paciente(id_paciente):
-    sql = """
-        SELECT
-            a.id_atendimento,
-            a.data_hora,
-            a.duracao_minutos,
-            a.id_paciente,
-            a.id_residente,
-            a.id_preceptor,
-            a.id_unidade,
-            res.nome AS nome_residente,
-            prec.nome AS nome_preceptor
-        FROM atendimento a
-        JOIN pessoa res ON res.id_pessoa = a.id_residente
-        JOIN pessoa prec ON prec.id_pessoa = a.id_preceptor
-        WHERE a.id_paciente = %s
-        ORDER BY a.data_hora
-    """
-    return executar_query(sql, (id_paciente,), fetch=True)
+def listar_por_paciente(session: Session, id_paciente: int):
+    """Lista os atendimentos de um paciente, já trazendo nome do residente e do preceptor."""
+    stmt = (
+        select(
+            Atendimento.id_atendimento,
+            Atendimento.data_hora,
+            Atendimento.duracao_minutos,
+            Atendimento.id_paciente,
+            Atendimento.id_residente,
+            Atendimento.id_preceptor,
+            Atendimento.id_unidade,
+            Residente.nome.label("nome_residente"),  # nome herdado de Pessoa
+            Preceptor.nome.label("nome_preceptor"),  # nome herdado de Pessoa
+        )
+        .join(Residente, Residente.id_profissional == Atendimento.id_residente)
+        .join(Preceptor, Preceptor.id_profissional == Atendimento.id_preceptor)
+        .where(Atendimento.id_paciente == id_paciente)
+        .order_by(Atendimento.data_hora)
+    )
+    return session.execute(stmt).all()
 
 
-def tempo_medio():
-    sql = """
-        SELECT
-            r.id_profissional AS id_residente,
-            p.nome AS nome_residente,
-            ROUND(AVG(a.duracao_minutos), 1) AS tempo_medio_minutos
-        FROM residente r
-        JOIN pessoa p ON r.id_profissional = p.id_pessoa
-        LEFT JOIN atendimento a ON r.id_profissional = a.id_residente
-        GROUP BY r.id_profissional, p.nome
-        ORDER BY tempo_medio_minutos DESC
-    """
-    return executar_query(sql, fetch=True)
+def tempo_medio(session: Session):
+    stmt = (
+        select(
+            Residente.id_profissional.label("id_residente"),
+            Residente.nome.label("nome_residente"),
+            func.round(func.avg(Atendimento.duracao_minutos), 1).label("tempo_medio_minutos"),
+        )
+        .outerjoin(Atendimento, Atendimento.id_residente == Residente.id_profissional)
+        .group_by(Residente.id_profissional, Residente.nome)
+        .order_by(func.avg(Atendimento.duracao_minutos).desc())
+    )
+    return session.execute(stmt).all()
 
 
-def tempo_medio_espera():
-    """Chama sp_calcular_tempo_medio_espera e retorna o result set."""
-    conn = get_connection()
-    try:
-        cursor = conn.cursor(dictionary=True)
-        cursor.execute("CALL sp_calcular_tempo_medio_espera()")
-        resultado = cursor.fetchall()
-        # Consome result sets restantes para evitar erros de sincronização
-        while cursor.nextset():
-            pass
-        conn.commit()
-        return resultado
-    except Exception:
-        conn.rollback()
-        raise
-    finally:
-        conn.close()
+def tempo_medio_espera(session: Session):
+    inicio_primeiro_procedimento = (
+        select(
+            ProcedimentoRealizado.id_atendimento,
+            func.min(ProcedimentoRealizado.data_hora_inicio).label("inicio"),
+        )
+        .where(ProcedimentoRealizado.data_hora_inicio.is_not(None))
+        .group_by(ProcedimentoRealizado.id_atendimento)
+        .subquery()
+    )
 
+    stmt = select(
+        func.round(
+            func.avg(
+                func.timestampdiff(
+                    literal_column("MINUTE"),
+                    Atendimento.data_hora,
+                    inicio_primeiro_procedimento.c.inicio,
+                )
+            ),
+            1,
+        ).label("tempo_medio_espera_minutos")
+    ).join(
+        inicio_primeiro_procedimento,
+        inicio_primeiro_procedimento.c.id_atendimento == Atendimento.id_atendimento,
+    )
+    return session.execute(stmt).scalar()
