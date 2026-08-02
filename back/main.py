@@ -6,7 +6,7 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
-from api.routers import atendimento, paciente, procedimento, profissional, relatorio
+from api.routers import atendimento, escala, paciente, procedimento, profissional, relatorio
 from db.connect import engine
 from exceptions.errors import AppException
 
@@ -32,6 +32,7 @@ app.add_middleware(
 )
 
 app.include_router(atendimento.router)
+app.include_router(escala.router)
 app.include_router(paciente.router)
 app.include_router(procedimento.router)
 app.include_router(profissional.router)

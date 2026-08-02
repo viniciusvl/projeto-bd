@@ -1,7 +1,9 @@
-import mysql.connector
+from sqlalchemy.exc import IntegrityError
 
+from db.connect import get_session
 from db.repository import paciente_repository
 from exceptions.errors import BadRequest, NotFound
+from exceptions.repository_exceptions import EntidadeNaoEncontradaError
 from schemas.paciente import PacienteCreate, PacienteUpdate
 
 GRUPOS_SANGUINEOS = {"A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"}
@@ -15,7 +17,8 @@ def _limpar(valor):
 
 
 def listar_todos():
-    return paciente_repository.listar_todos()
+    with get_session() as session:
+        return paciente_repository.listar_todos(session)
 
 
 def criar(paciente: PacienteCreate):
@@ -41,16 +44,25 @@ def criar(paciente: PacienteCreate):
     )
 
     try:
-        novo_id = paciente_repository.criar(
-            nome=nome,
-            cpf=cpf,
-            data_nascimento=paciente.data_nascimento,
-            is_flamengo=paciente.is_flamengo,
-            telefone=_limpar(paciente.telefone),
-            **dados,
-        )
-    except mysql.connector.IntegrityError as exc:
-        if exc.errno == 1062:
+        with get_session() as session:
+            novo_id = paciente_repository.criar(
+                session,
+                nome=nome,
+                cpf=cpf,
+                data_nascimento=paciente.data_nascimento,
+                is_flamengo=paciente.is_flamengo,
+                telefone=_limpar(paciente.telefone),
+                **dados,
+            )
+    except IntegrityError as exc:
+        # Antes checávamos mysql.connector.IntegrityError.errno == 1062;
+        # com o ORM, o driver original fica em exc.orig (pymysql), então
+        # olhamos o errno por lá (com fallback pra exc.args).
+        orig = exc.orig
+        errno = getattr(orig, "errno", None)
+        if errno is None and getattr(orig, "args", None):
+            errno = orig.args[0]
+        if errno == 1062:
             raise BadRequest("Já existe um paciente com esse CPF.")
         raise BadRequest("Não foi possível cadastrar o paciente.")
 
@@ -58,15 +70,18 @@ def criar(paciente: PacienteCreate):
 
 
 def atualizar(paciente: PacienteUpdate):
-    linhas = paciente_repository.atualizar(
-        paciente.id_pessoa,
-        paciente.num_convenio,
-        paciente.estado,
-        paciente.cidade,
-        paciente.bairro,
-        paciente.logradouro,
-        paciente.numero,
-    )
-    if linhas == 0:
-        raise NotFound("Paciente não encontrado.")
+    with get_session() as session:
+        try:
+            paciente_repository.atualizar(
+                session,
+                paciente.id_pessoa,
+                paciente.num_convenio,
+                paciente.estado,
+                paciente.cidade,
+                paciente.bairro,
+                paciente.logradouro,
+                paciente.numero,
+            )
+        except EntidadeNaoEncontradaError as exc:
+            raise NotFound(str(exc))
     return {"id_pessoa": paciente.id_pessoa, "atualizado": True}

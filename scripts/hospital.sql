@@ -270,5 +270,3 @@ CREATE TABLE auditoria_atendimento (
 
     CONSTRAINT pk_auditoria_atendimento PRIMARY KEY (id_auditoria)
 );
-
-SOURCE triggers.sql;

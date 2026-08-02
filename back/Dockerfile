@@ -8,9 +8,9 @@ RUN pip install --no-cache-dir poetry
 # Copia apenas os manifestos primeiro (cache de dependências)
 COPY pyproject.toml ./
 
-# Instala as dependências no ambiente global do container
+# Instala as dependências no ambiente global do container (incluindo dev para pytest)
 RUN poetry config virtualenvs.create false \
-    && poetry install --no-root
+    && poetry install --no-root --with dev
 
 # Copia o código da aplicação
 COPY . .

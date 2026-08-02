@@ -253,9 +253,6 @@ class ProcedimentoRealizado(Base):
     )
     procedimento: Mapped["Procedimento"] = relationship(back_populates="realizacoes")
 
-
-from sqlalchemy.orm import versioned
-
 class Escala(Base):
     __tablename__ = "escala"
     __table_args__ = (

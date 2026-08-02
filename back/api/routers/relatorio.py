@@ -4,11 +4,14 @@ from typing import Optional
 from fastapi import APIRouter
 
 from schemas.relatorio import (
+    EstatisticaMensalOut,
+    PacienteInternadoOut,
     PacienteSemRiscoOut,
     PlantaoUnidadeOut,
     PreceptorSupervisaoOut,
     RankingPreceptorOut,
     RankingResidenteOut,
+    ResidenteSemSupervisorOut,
 )
 from service import relatorio_service
 
@@ -39,3 +42,24 @@ def plantoes_por_unidade():
 @router.get("/pacientes-sem-risco-alto/", response_model=list[PacienteSemRiscoOut])
 def pacientes_sem_risco_alto():
     return relatorio_service.pacientes_sem_risco_alto()
+
+
+# --- Views ---
+
+@router.get("/pacientes-internados/", response_model=list[PacienteInternadoOut])
+def pacientes_internados():
+    """Lista pacientes atualmente internados (via vw_pacientes_internados)."""
+    return relatorio_service.pacientes_internados()
+
+
+@router.get("/residentes-sem-supervisor/", response_model=list[ResidenteSemSupervisorOut])
+def residentes_sem_supervisor():
+    """Residentes escalados sem supervisor adequado (via vw_residentes_sem_supervisor)."""
+    return relatorio_service.residentes_sem_supervisor()
+
+
+@router.get("/estatisticas-mensais/", response_model=list[EstatisticaMensalOut])
+def estatisticas_mensais(ano: Optional[int] = None, mes: Optional[int] = None):
+    """Estatísticas mensais de atendimentos por unidade (via vw_estatisticas_atendimentos_mensal)."""
+    return relatorio_service.estatisticas_mensais(ano, mes)
+
