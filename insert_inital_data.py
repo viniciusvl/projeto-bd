@@ -34,6 +34,8 @@ def main():
             if not apenas_dados:
                 print("Aplicando schema (hospital.sql)...")
                 _executar_arquivo(cursor, SCRIPTS_DIR / "hospital.sql")
+                print("Carregando triggers...")
+                _executar_arquivo(cursor, SCRIPTS_DIR / "triggers.sql")
             print("Inserindo dados iniciais (data.sql)...")
             _executar_arquivo(cursor, SCRIPTS_DIR / "data.sql")
         conexao.commit()
