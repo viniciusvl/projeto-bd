@@ -6,7 +6,7 @@ from sqlalchemy import case, exists, extract, func, select
 from sqlalchemy.orm import Session
  
 from db.views import get_view
-from models import (
+from db.models import (
     Atendimento,
     Escala,
     Paciente,
@@ -16,8 +16,6 @@ from models import (
     Residente,
     Unidade,
 )
-
-
 
 def ranking_residentes(session: Session):
     stmt = (
@@ -175,3 +173,4 @@ def estatisticas_mensais(session: Session, ano: Optional[int] = None, mes: Optio
         stmt = stmt.where(tabela.c.mes == mes)
     stmt = stmt.order_by(tabela.c.ano.desc(), tabela.c.mes.desc())
     return session.execute(stmt).all()
+
