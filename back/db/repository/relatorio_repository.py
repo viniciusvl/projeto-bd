@@ -82,3 +82,32 @@ def pacientes_sem_risco_alto():
         ORDER BY p.nome
     """
     return executar_query(sql, fetch=True)
+
+
+# --- Views ---
+
+def pacientes_internados():
+    """Consulta vw_pacientes_internados."""
+    return executar_query("SELECT * FROM vw_pacientes_internados", fetch=True)
+
+
+def residentes_sem_supervisor():
+    """Consulta vw_residentes_sem_supervisor."""
+    return executar_query("SELECT * FROM vw_residentes_sem_supervisor", fetch=True)
+
+
+def estatisticas_mensais(ano=None, mes=None):
+    """Consulta vw_estatisticas_atendimentos_mensal com filtros opcionais."""
+    filtros = []
+    params = []
+    if ano is not None:
+        filtros.append("ano = %s")
+        params.append(ano)
+    if mes is not None:
+        filtros.append("mes = %s")
+        params.append(mes)
+
+    where = f"WHERE {' AND '.join(filtros)}" if filtros else ""
+    sql = f"SELECT * FROM vw_estatisticas_atendimentos_mensal {where} ORDER BY ano DESC, mes DESC"
+    return executar_query(sql, tuple(params), fetch=True)
+
