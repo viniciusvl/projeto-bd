@@ -11,7 +11,9 @@ import type {
   PacienteInternado,
   PacienteSemRisco,
   PacienteUpdate,
+  PercentualAltoRisco,
   PlantaoUnidade,
+  PreceptorFlamenguista,
   PreceptorSupervisao,
   ProcedimentoRealizado,
   Profissional,
@@ -23,6 +25,7 @@ import type {
   TempoMedioEspera,
   TempoMedioProcedimento,
   Unidade,
+  UltimoAtendimento,
 } from "../types";
 
 const BASE_URL = import.meta.env.VITE_API_URL ?? "http://localhost:8000";
@@ -151,4 +154,14 @@ export const api = {
       `/relatorio/auditoria-atendimentos/${qs ? `?${qs}` : ""}`
     );
   },
+
+  // Novas consultas
+  ultimoAtendimentoPorPaciente: () =>
+    request<UltimoAtendimento[]>("/atendimento/ultimo-por-paciente/"),
+  preceptoresFlamenguistas: () =>
+    request<PreceptorFlamenguista[]>("/relatorio/preceptores-flamenguistas/"),
+  percentualAltoRiscoPorResidente: () =>
+    request<PercentualAltoRisco[]>(
+      "/relatorio/percentual-alto-risco-por-residente/"
+    ),
 };

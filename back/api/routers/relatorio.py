@@ -14,6 +14,8 @@ from schemas.relatorio import (
     RankingResidenteOut,
     ResidenteSemSupervisorOut,
     TempoMedioProcedimentoOut,
+    PreceptorFlamenguistaOut,
+    PercentualAltoRiscoOut
 )
 from service import relatorio_service
 
@@ -45,6 +47,17 @@ def plantoes_por_unidade():
 def pacientes_sem_risco_alto():
     return relatorio_service.pacientes_sem_risco_alto()
 
+@router.get("/preceptores-flamenguistas/", response_model=list[PreceptorFlamenguistaOut])
+def preceptores_de_residentes_que_atenderam_flamenguistas():
+    """Preceptores que supervisionaram residentes que atenderam pacientes flamenguistas."""
+    return relatorio_service.preceptores_de_residentes_que_atenderam_flamenguistas()
+ 
+ 
+@router.get("/percentual-alto-risco-por-residente/", response_model=list[PercentualAltoRiscoOut])
+def percentual_alto_risco_por_residente():
+    """Percentual de procedimentos de alto risco realizados por cada residente."""
+    return relatorio_service.percentual_alto_risco_por_residente()
+ 
 
 # --- Views ---
 

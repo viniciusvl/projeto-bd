@@ -43,3 +43,10 @@ class TempoMedioEsperaOut(BaseModel):
     unidade: str
     total_atendimentos_analisados: int
     tempo_medio_espera_minutos: Optional[float] = None
+
+class UltimoAtendimentoOut(BaseModel):
+    paciente: str
+    data_hora: datetime
+    residente: str
+    preceptor: str
+    procedimentos: list[str]

@@ -212,3 +212,20 @@ export interface AuditoriaFiltro {
   cursor?: number;
   limite?: number;
 }
+
+export interface UltimoAtendimento {
+  paciente: string;
+  data_hora: string;
+  residente: string;
+  preceptor: string;
+  procedimentos: string[];
+}
+export interface PreceptorFlamenguista {
+  nome_preceptor: string;
+}
+export interface PercentualAltoRisco {
+  residente: string;
+  total_procedimentos: number;
+  procedimentos_alto_risco: number;
+  percentual_alto_risco: number;
+}

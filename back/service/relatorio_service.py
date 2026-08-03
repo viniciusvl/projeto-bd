@@ -26,6 +26,16 @@ def pacientes_sem_risco_alto():
     with get_session() as session:
         return relatorio_repository.pacientes_sem_risco_alto(session)
 
+def preceptores_de_residentes_que_atenderam_flamenguistas():
+    with get_session() as session:
+        return relatorio_repository.preceptores_de_residentes_que_atenderam_flamenguistas(session)
+ 
+ 
+def percentual_alto_risco_por_residente():
+    with get_session() as session:
+        return relatorio_repository.percentual_alto_risco_por_residente(session)
+ 
+
 
 # --- Views ---
 

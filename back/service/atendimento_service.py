@@ -37,3 +37,7 @@ def tempo_medio():
 def tempo_medio_espera():
     with get_session() as session:
         return atendimento_repository.tempo_medio_espera(session)
+
+def ultimo_atendimento_por_paciente():
+    with get_session() as session:
+        return atendimento_repository.ultimo_atendimento_por_paciente(session)

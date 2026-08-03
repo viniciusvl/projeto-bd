@@ -1,6 +1,6 @@
 from fastapi import APIRouter, status
 
-from schemas.atendimento import AtendimentoCreate, AtendimentoOut, TempoMedioOut, TempoMedioEsperaOut
+from schemas.atendimento import AtendimentoCreate, AtendimentoOut, TempoMedioOut, TempoMedioEsperaOut, UltimoAtendimentoOut
 from service import atendimento_service
 
 router = APIRouter(prefix="/atendimento", tags=["atendimento"])
@@ -27,3 +27,7 @@ def criar_atendimento(atendimento: AtendimentoCreate):
 def listar_por_paciente(id_paciente: int):
     return atendimento_service.listar_por_paciente(id_paciente)
 
+def ultimo_atendimento_por_paciente():
+    """Último atendimento de cada paciente, com residente, preceptor e procedimentos realizados."""
+    return atendimento_service.ultimo_atendimento_por_paciente()
+ 

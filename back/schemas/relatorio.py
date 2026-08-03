@@ -94,3 +94,12 @@ class AuditoriaPageOut(BaseModel):
     items: list[AuditoriaAtendimentoOut]
     next_cursor: Optional[int] = None
     total: int
+
+class PreceptorFlamenguistaOut(BaseModel):
+    nome_preceptor: str
+
+class PercentualAltoRiscoOut(BaseModel):
+    residente: str
+    total_procedimentos: int
+    procedimentos_alto_risco: int
+    percentual_alto_risco: float
