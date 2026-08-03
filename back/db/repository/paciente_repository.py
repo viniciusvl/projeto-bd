@@ -25,15 +25,6 @@ def criar(
     logradouro: Optional[str],
     numero: Optional[str],
 ) -> int:
-    """
-    Substitui os 2 INSERTs manuais (pessoa + paciente). Como `Paciente`
-    usa herança joined-table de `Pessoa`, um único objeto `Paciente` já
-    gera o INSERT nas duas tabelas. `flush()` garante que `id_pessoa` já
-    está preenchido antes de retornar, sem commitar a transação (quem
-    commita é o service, via `get_session()`) — é nesse momento que uma
-    violação de UNIQUE (ex.: CPF duplicado) é detectada e sobe como
-    `sqlalchemy.exc.IntegrityError` para o service tratar.
-    """
     novo_paciente = Paciente(
         nome=nome,
         cpf=cpf,
@@ -79,8 +70,6 @@ def atualizar(
     logradouro: Optional[str] = None,
     numero: Optional[str] = None,
 ) -> Paciente:
-    """Atualiza endereço/convênio, preservando valores atuais quando o parâmetro vem None
-    (equivalente ao COALESCE(%s, coluna) do SQL puro)."""
     paciente = session.get(Paciente, id_pessoa)
     if paciente is None:
         raise EntidadeNaoEncontradaError(f"Paciente {id_pessoa} não encontrado.")

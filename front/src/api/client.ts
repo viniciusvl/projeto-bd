@@ -1,8 +1,14 @@
 import type {
   Atendimento,
   AtendimentoCreate,
+  AuditoriaFiltro,
+  AuditoriaPage,
+  Escala,
+  EscalaCreate,
+  EstatisticaMensal,
   Paciente,
   PacienteCreate,
+  PacienteInternado,
   PacienteSemRisco,
   PacienteUpdate,
   PlantaoUnidade,
@@ -11,7 +17,12 @@ import type {
   Profissional,
   RankingPreceptor,
   RankingResidente,
+  ReajustarEscalaIn,
+  ResidenteSemSupervisor,
   TempoMedio,
+  TempoMedioEspera,
+  TempoMedioProcedimento,
+  Unidade,
 } from "../types";
 
 const BASE_URL = import.meta.env.VITE_API_URL ?? "http://localhost:8000";
@@ -62,6 +73,22 @@ export const api = {
   listarResidentes: () => request<Profissional[]>("/profissional/residentes/"),
   listarPreceptores: () => request<Profissional[]>("/profissional/preceptores/"),
 
+  // Unidades
+  listarUnidades: () => request<Unidade[]>("/unidade/"),
+
+  // Escalas
+  listarEscalas: () => request<Escala[]>("/escala/"),
+  criarEscala: (body: EscalaCreate) =>
+    request<Escala>("/escala", {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+  reajustarEscala: (body: ReajustarEscalaIn) =>
+    request<{ message: string }>("/escala/reajustar", {
+      method: "PUT",
+      body: JSON.stringify(body),
+    }),
+
   // Atendimentos
   listarAtendimentos: (idPaciente: number) =>
     request<Atendimento[]>(`/atendimento/?id_paciente=${idPaciente}`),
@@ -96,4 +123,32 @@ export const api = {
     request<PlantaoUnidade[]>("/relatorio/plantoes-por-unidade/"),
   pacientesSemRiscoAlto: () =>
     request<PacienteSemRisco[]>("/relatorio/pacientes-sem-risco-alto/"),
+  tempoMedioEspera: () =>
+    request<TempoMedioEspera[]>("/atendimento/tempo-medio-espera/"),
+  estatisticasMensais: (ano?: number, mes?: number) => {
+    const params = new URLSearchParams();
+    if (ano != null) params.set("ano", String(ano));
+    if (mes != null) params.set("mes", String(mes));
+    const qs = params.toString();
+    return request<EstatisticaMensal[]>(
+      `/relatorio/estatisticas-mensais/${qs ? `?${qs}` : ""}`
+    );
+  },
+  pacientesInternados: () =>
+    request<PacienteInternado[]>("/relatorio/pacientes-internados/"),
+  residentesSemSupervisor: () =>
+    request<ResidenteSemSupervisor[]>("/relatorio/residentes-sem-supervisor/"),
+  tempoMedioProcedimentos: () =>
+    request<TempoMedioProcedimento[]>("/relatorio/tempo-medio-procedimentos/"),
+  auditoriaAtendimentos: (filtro: AuditoriaFiltro = {}) => {
+    const params = new URLSearchParams();
+    if (filtro.dataInicial) params.set("data_inicial", filtro.dataInicial);
+    if (filtro.dataFinal) params.set("data_final", filtro.dataFinal);
+    if (filtro.cursor != null) params.set("cursor", String(filtro.cursor));
+    if (filtro.limite != null) params.set("limite", String(filtro.limite));
+    const qs = params.toString();
+    return request<AuditoriaPage>(
+      `/relatorio/auditoria-atendimentos/${qs ? `?${qs}` : ""}`
+    );
+  },
 };

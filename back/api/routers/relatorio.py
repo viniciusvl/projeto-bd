@@ -1,9 +1,10 @@
-from datetime import datetime
+from datetime import date, datetime
 from typing import Optional
 
 from fastapi import APIRouter
 
 from schemas.relatorio import (
+    AuditoriaPageOut,
     EstatisticaMensalOut,
     PacienteInternadoOut,
     PacienteSemRiscoOut,
@@ -12,6 +13,7 @@ from schemas.relatorio import (
     RankingPreceptorOut,
     RankingResidenteOut,
     ResidenteSemSupervisorOut,
+    TempoMedioProcedimentoOut,
 )
 from service import relatorio_service
 
@@ -62,4 +64,23 @@ def residentes_sem_supervisor():
 def estatisticas_mensais(ano: Optional[int] = None, mes: Optional[int] = None):
     """Estatísticas mensais de atendimentos por unidade (via vw_estatisticas_atendimentos_mensal)."""
     return relatorio_service.estatisticas_mensais(ano, mes)
+
+
+@router.get("/tempo-medio-procedimentos/", response_model=list[TempoMedioProcedimentoOut])
+def tempo_medio_procedimentos():
+    """Tempo médio por procedimento (coluna mantida pelos triggers trg_atualiza_media_procedimentos_*)."""
+    return relatorio_service.tempo_medio_procedimentos()
+
+
+@router.get("/auditoria-atendimentos/", response_model=AuditoriaPageOut)
+def auditoria_atendimentos(
+    data_inicial: Optional[date] = None,
+    data_final: Optional[date] = None,
+    cursor: Optional[int] = None,
+    limite: int = 20,
+):
+    """Histórico de alterações de atendimentos (tabela auditoria_atendimento, via
+    triggers trg_audita_atendimento_*), com filtro por data do atendimento e
+    paginação por cursor (id_auditoria)."""
+    return relatorio_service.auditoria_atendimentos(data_inicial, data_final, cursor, limite)
 

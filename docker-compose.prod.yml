@@ -36,6 +36,8 @@ services:
       DB_PASSWORD: ${MYSQL_PASSWORD}
       DB_NAME: ${MYSQL_DATABASE}
       ROOT_PATH: /api
+    volumes:
+      - db_data:/var/lib/mysql
     depends_on:
       db:
         condition: service_healthy

@@ -42,3 +42,15 @@ def residentes_sem_supervisor():
 def estatisticas_mensais(ano=None, mes=None):
     with get_session() as session:
         return relatorio_repository.estatisticas_mensais(session, ano, mes)
+
+
+def tempo_medio_procedimentos():
+    with get_session() as session:
+        return relatorio_repository.tempo_medio_procedimentos(session)
+
+
+def auditoria_atendimentos(data_inicial=None, data_final=None, cursor=None, limite: int = 20):
+    with get_session() as session:
+        return relatorio_repository.auditoria_atendimentos(
+            session, data_inicial, data_final, cursor, limite
+        )

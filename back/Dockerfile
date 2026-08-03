@@ -2,19 +2,27 @@ FROM python:3.12-slim
 
 WORKDIR /app
 
-# Instala o Poetry
+# Instala o Poetry e utilitários
+RUN apt-get update && apt-get install -y --no-install-recommends netcat-traditional \
+    && rm -rf /var/lib/apt/lists/*
 RUN pip install --no-cache-dir poetry
 
 # Copia apenas os manifestos primeiro (cache de dependências)
-COPY pyproject.toml ./
+COPY back/pyproject.toml ./
 
 # Instala as dependências no ambiente global do container (incluindo dev para pytest)
 RUN poetry config virtualenvs.create false \
     && poetry install --no-root --with dev
 
 # Copia o código da aplicação
-COPY . .
+COPY back/ .
+
+# Copia os scripts do banco
+COPY scripts ./scripts
 
 EXPOSE 8000
 
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--proxy-headers", "--forwarded-allow-ips", "*"]
+COPY back/entrypoint.sh /app/
+RUN chmod +x /app/entrypoint.sh
+
+ENTRYPOINT ["/app/entrypoint.sh"]
