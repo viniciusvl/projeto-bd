@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Info, Timer, Trophy, UserCog } from "lucide-react";
+import { Heart, Info, Timer, Trophy, UserCog } from "lucide-react";
 import { AppLayout } from "../../components/layout/AppLayout";
 import { Card } from "../../components/ui/Card";
 import { Badge } from "../../components/ui/Badge";
@@ -9,6 +9,7 @@ import { useFetch } from "../../lib/useFetch";
 import { api } from "../../api/client";
 import { MESES } from "../../lib/format";
 import type {
+  PreceptorFlamenguista,
   PreceptorSupervisao,
   RankingPreceptor,
   RankingResidente,
@@ -38,11 +39,15 @@ export function DesempenhoPage() {
     () => api.preceptoresSupervisao(ano, mes),
     [ano, mes]
   );
+  const flamenguistas = useFetch<PreceptorFlamenguista[]>(() =>
+    api.preceptoresFlamenguistas()
+  );
 
   const tempos = tempo.data ?? [];
   const ranksRes = rankingRes.data ?? [];
   const ranksPrec = rankingPrec.data ?? [];
   const supervisoes = supervisao.data ?? [];
+  const listaFlamenguistas = flamenguistas.data ?? [];
   const maxTempo = Math.max(1, ...tempos.map((t) => t.tempo_medio_minutos ?? 0));
 
   return (
@@ -130,39 +135,71 @@ export function DesempenhoPage() {
       <h2 className="mb-3 text-xs font-bold uppercase tracking-wide text-slate-400">
         Preceptores
       </h2>
-      <Card
-        icon={<Trophy className="h-5 w-5" />}
-        title="Ranking de preceptores por consultas"
-        subtitle="Total de atendimentos supervisionados (geral)"
-        className="mb-6"
-      >
-        {rankingPrec.loading ? (
-          <Spinner />
-        ) : rankingPrec.error ? (
-          <EmptyState title="Erro ao carregar" description={rankingPrec.error} />
-        ) : ranksPrec.length === 0 ? (
-          <EmptyState title="Sem dados" />
-        ) : (
-          <ol className="space-y-2">
-            {ranksPrec.map((r, i) => (
-              <li
-                key={`${r.nome}-${i}`}
-                className="flex items-center gap-3 rounded-lg border border-slate-100 px-3 py-2"
-              >
-                <span
-                  className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold ${medalha(i)}`}
+      <div className="mb-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <Card
+          icon={<Trophy className="h-5 w-5" />}
+          title="Ranking de preceptores por consultas"
+          subtitle="Total de atendimentos supervisionados (geral)"
+        >
+          {rankingPrec.loading ? (
+            <Spinner />
+          ) : rankingPrec.error ? (
+            <EmptyState title="Erro ao carregar" description={rankingPrec.error} />
+          ) : ranksPrec.length === 0 ? (
+            <EmptyState title="Sem dados" />
+          ) : (
+            <ol className="space-y-2">
+              {ranksPrec.map((r, i) => (
+                <li
+                  key={`${r.nome}-${i}`}
+                  className="flex items-center gap-3 rounded-lg border border-slate-100 px-3 py-2"
                 >
-                  {i + 1}
-                </span>
-                <span className="flex-1 font-medium text-slate-700">{r.nome}</span>
-                <span className="text-sm font-bold text-slate-800">
-                  {r.total} consulta(s)
-                </span>
-              </li>
-            ))}
-          </ol>
-        )}
-      </Card>
+                  <span
+                    className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold ${medalha(i)}`}
+                  >
+                    {i + 1}
+                  </span>
+                  <span className="flex-1 font-medium text-slate-700">{r.nome}</span>
+                  <span className="text-sm font-bold text-slate-800">
+                    {r.total} consulta(s)
+                  </span>
+                </li>
+              ))}
+            </ol>
+          )}
+        </Card>
+
+        <Card
+          icon={<Heart className="h-5 w-5" />}
+          title="Pacientes flamenguistas"
+          subtitle="Preceptores que supervisionaram residentes que atenderam torcedores do Flamengo"
+        >
+          {flamenguistas.loading ? (
+            <Spinner />
+          ) : flamenguistas.error ? (
+            <EmptyState title="Erro ao carregar" description={flamenguistas.error} />
+          ) : listaFlamenguistas.length === 0 ? (
+            <EmptyState
+              title="Nenhum preceptor encontrado"
+              description="Nenhum atendimento a paciente flamenguista foi registrado ainda."
+            />
+          ) : (
+            <ul className="space-y-2">
+              {listaFlamenguistas.map((p, i) => (
+                <li
+                  key={`${p.nome_preceptor}-${i}`}
+                  className="flex items-center gap-2 rounded-lg border border-slate-100 px-3 py-2.5"
+                >
+                  <Heart className="h-4 w-4 shrink-0 text-rose-500" />
+                  <span className="font-medium text-slate-700">
+                    {p.nome_preceptor}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </Card>
+      </div>
 
       <div className="mb-6 flex items-start gap-3 rounded-xl border border-brand-100 bg-brand-50 px-4 py-3 text-sm text-brand-800">
         <Info className="mt-0.5 h-4 w-4 shrink-0" />

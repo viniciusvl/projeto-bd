@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { BedDouble, ShieldCheck } from "lucide-react";
+import { BedDouble, Clock3, ShieldCheck } from "lucide-react";
 import { AppLayout } from "../../components/layout/AppLayout";
 import { Card } from "../../components/ui/Card";
 import { Badge } from "../../components/ui/Badge";
@@ -8,12 +8,19 @@ import { EmptyState } from "../../components/ui/EmptyState";
 import { useFetch } from "../../lib/useFetch";
 import { formatDateTime } from "../../lib/format";
 import { api } from "../../api/client";
-import type { PacienteInternado, PacienteSemRisco } from "../../types";
+import type {
+  PacienteInternado,
+  PacienteSemRisco,
+  UltimoAtendimento,
+} from "../../types";
 
 export function PacientesReportPage() {
   const semRisco = useFetch<PacienteSemRisco[]>(() => api.pacientesSemRiscoAlto());
   const internados = useFetch<PacienteInternado[]>(() =>
     api.pacientesInternados()
+  );
+  const ultimos = useFetch<UltimoAtendimento[]>(() =>
+    api.ultimoAtendimentoPorPaciente()
   );
 
   const lista = useMemo(() => semRisco.data ?? [], [semRisco.data]);
@@ -21,6 +28,7 @@ export function PacientesReportPage() {
     () => internados.data ?? [],
     [internados.data]
   );
+  const listaUltimos = useMemo(() => ultimos.data ?? [], [ultimos.data]);
 
   return (
     <AppLayout
@@ -73,6 +81,65 @@ export function PacientesReportPage() {
                       {formatDateTime(p.data_entrada)}
                     </td>
                     <td className="td text-slate-500">{p.motivo ?? "—"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </Card>
+
+      <Card
+        icon={<Clock3 className="h-5 w-5" />}
+        title="Último atendimento por paciente"
+        subtitle="Data/hora, residente, preceptor e procedimentos do atendimento mais recente"
+        className="mb-6"
+      >
+        {ultimos.loading ? (
+          <Spinner label="Carregando últimos atendimentos..." />
+        ) : ultimos.error ? (
+          <EmptyState title="Erro ao carregar" description={ultimos.error} />
+        ) : listaUltimos.length === 0 ? (
+          <EmptyState
+            title="Nenhum atendimento encontrado"
+            description="Ainda não há atendimentos registrados."
+          />
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="bg-slate-50">
+                  <th className="th">Paciente</th>
+                  <th className="th">Data/Hora</th>
+                  <th className="th">Residente</th>
+                  <th className="th">Preceptor</th>
+                  <th className="th">Procedimentos</th>
+                </tr>
+              </thead>
+              <tbody>
+                {listaUltimos.map((a, i) => (
+                  <tr key={`${a.paciente}-${i}`} className="tr">
+                    <td className="td font-semibold text-slate-800">
+                      {a.paciente}
+                    </td>
+                    <td className="td text-slate-500">
+                      {formatDateTime(a.data_hora)}
+                    </td>
+                    <td className="td">{a.residente}</td>
+                    <td className="td">{a.preceptor}</td>
+                    <td className="td">
+                      {a.procedimentos.length === 0 ? (
+                        <span className="text-slate-400">—</span>
+                      ) : (
+                        <div className="flex flex-wrap gap-1">
+                          {a.procedimentos.map((p, j) => (
+                            <Badge key={`${p}-${j}`} tone="brand">
+                              {p}
+                            </Badge>
+                          ))}
+                        </div>
+                      )}
+                    </td>
                   </tr>
                 ))}
               </tbody>

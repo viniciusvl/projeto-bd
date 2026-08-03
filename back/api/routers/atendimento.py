@@ -27,6 +27,7 @@ def criar_atendimento(atendimento: AtendimentoCreate):
 def listar_por_paciente(id_paciente: int):
     return atendimento_service.listar_por_paciente(id_paciente)
 
+@router.get("/ultimo-por-paciente/", response_model=list[UltimoAtendimentoOut])
 def ultimo_atendimento_por_paciente():
     """Último atendimento de cada paciente, com residente, preceptor e procedimentos realizados."""
     return atendimento_service.ultimo_atendimento_por_paciente()

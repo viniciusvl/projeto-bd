@@ -6,7 +6,6 @@ import {
   Building2,
   CalendarDays,
   ChevronDown,
-  Gauge,
   HeartPulse,
   History,
   LayoutDashboard,
@@ -26,7 +25,6 @@ const reportItems = [
   { to: "/relatorios/pacientes", label: "Pacientes", icon: HeartPulse },
   { to: "/relatorios/procedimentos", label: "Procedimentos", icon: Syringe },
   { to: "/relatorios/auditoria", label: "Auditoria", icon: History },
-  { to: "/relatorios/indicadores", label: "Indicadores", icon: Gauge },
 ];
 
 export function Sidebar({

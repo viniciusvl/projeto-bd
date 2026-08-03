@@ -9,7 +9,6 @@ import { UnidadesPage } from "./pages/relatorios/UnidadesPage";
 import { PacientesReportPage } from "./pages/relatorios/PacientesReportPage";
 import { ProcedimentosPage } from "./pages/relatorios/ProcedimentosPage";
 import { AuditoriaPage } from "./pages/relatorios/AuditoriaPage";
-import { IndicadoresPage } from "./pages/relatorios/IndicadoresPage";
 
 export default function App() {
   return (
@@ -24,7 +23,6 @@ export default function App() {
         <Route path="/relatorios/pacientes" element={<PacientesReportPage />} />
         <Route path="/relatorios/procedimentos" element={<ProcedimentosPage />} />
         <Route path="/relatorios/auditoria" element={<AuditoriaPage />} />
-        <Route path="/relatorios/indicadores" element={<IndicadoresPage />} />
         {/* Redirects das rotas antigas de relatório */}
         <Route
           path="/relatorios/residentes"

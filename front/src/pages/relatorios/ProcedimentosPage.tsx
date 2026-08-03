@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { Timer } from "lucide-react";
+import { Percent, Timer } from "lucide-react";
 import { AppLayout } from "../../components/layout/AppLayout";
 import { Card } from "../../components/ui/Card";
 import { Badge } from "../../components/ui/Badge";
@@ -7,7 +7,7 @@ import { Spinner } from "../../components/ui/Spinner";
 import { EmptyState } from "../../components/ui/EmptyState";
 import { useFetch } from "../../lib/useFetch";
 import { api } from "../../api/client";
-import type { TempoMedioProcedimento } from "../../types";
+import type { PercentualAltoRisco, TempoMedioProcedimento } from "../../types";
 
 type Tone = "success" | "warning" | "neutral" | "brand" | "danger";
 
@@ -19,11 +19,29 @@ function riscoTone(risco: string): Tone {
   return "neutral";
 }
 
+// Mesma lógica de cor da tabela de risco por procedimento, mas aplicada ao
+// percentual: quanto maior a fatia de alto risco na carga do residente,
+// mais forte o alerta.
+function percentualTone(percentual: number): Tone {
+  if (percentual >= 50) return "danger";
+  if (percentual >= 20) return "warning";
+  if (percentual > 0) return "brand";
+  return "success";
+}
+
 export function ProcedimentosPage() {
   const { data, loading, error } = useFetch<TempoMedioProcedimento[]>(() =>
     api.tempoMedioProcedimentos()
   );
   const lista = useMemo(() => data ?? [], [data]);
+
+  const percentuais = useFetch<PercentualAltoRisco[]>(() =>
+    api.percentualAltoRiscoPorResidente()
+  );
+  const listaPercentuais = useMemo(
+    () => percentuais.data ?? [],
+    [percentuais.data]
+  );
 
   const maxTempo = Math.max(
     1,
@@ -39,6 +57,7 @@ export function ProcedimentosPage() {
         icon={<Timer className="h-5 w-5" />}
         title="Tempo médio por procedimento"
         subtitle="Média de duração (minutos) calculada a partir das execuções registradas"
+        className="mb-6"
       >
         {loading ? (
           <Spinner label="Carregando procedimentos..." />
@@ -75,6 +94,54 @@ export function ProcedimentosPage() {
               </li>
             ))}
           </ul>
+        )}
+      </Card>
+
+      <Card
+        icon={<Percent className="h-5 w-5" />}
+        title="% de alto risco por residente"
+        subtitle="Proporção de procedimentos de risco alto sobre o total realizado por cada residente"
+      >
+        {percentuais.loading ? (
+          <Spinner label="Carregando indicadores..." />
+        ) : percentuais.error ? (
+          <EmptyState title="Erro ao carregar" description={percentuais.error} />
+        ) : listaPercentuais.length === 0 ? (
+          <EmptyState
+            title="Nenhum residente encontrado"
+            description="Nenhum procedimento realizado foi registrado ainda."
+          />
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="bg-slate-50">
+                  <th className="th">Residente</th>
+                  <th className="th text-right">Total</th>
+                  <th className="th text-right">Alto risco</th>
+                  <th className="th text-right">%</th>
+                </tr>
+              </thead>
+              <tbody>
+                {listaPercentuais.map((r, i) => (
+                  <tr key={`${r.residente}-${i}`} className="tr">
+                    <td className="td font-semibold text-slate-800">
+                      {r.residente}
+                    </td>
+                    <td className="td text-right">{r.total_procedimentos}</td>
+                    <td className="td text-right">
+                      {r.procedimentos_alto_risco}
+                    </td>
+                    <td className="td text-right">
+                      <Badge tone={percentualTone(r.percentual_alto_risco)}>
+                        {r.percentual_alto_risco.toFixed(1)}%
+                      </Badge>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </Card>
     </AppLayout>
