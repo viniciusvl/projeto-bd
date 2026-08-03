@@ -12,8 +12,8 @@ from sqlalchemy.orm.exc import StaleDataError
 from db.connect import SessionLocal
 from db.models import Escala
 
-ID_RESIDENTE = 1 # inserir um id de residente existente
-ID_PRECEPTOR = 1 # inserir um id de preceptor existente
+ID_RESIDENTE = 10 # inserir um id de residente existente
+ID_PRECEPTOR = 19 # inserir um id de preceptor existente
 DIA_SEMANA = 'segunda'
 TURNO = 'manha'
 ID_UNIDADE_1 = 1
