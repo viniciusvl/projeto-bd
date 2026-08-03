@@ -205,6 +205,7 @@ CREATE TABLE escala (
     CONSTRAINT pk_escala PRIMARY KEY (id_escala),
     -- UNIQUE revisada (Etapa 2): inclui id_residente, conforme o enunciado
     CONSTRAINT uq_escala_unidade_turno_residente UNIQUE (id_unidade, dia_semana, turno, id_residente),
+    CONSTRAINT uq_escala_residente_horario UNIQUE (id_residente, dia_semana, turno), -- impede sobreposição entre unidades
     CONSTRAINT fk_escala_unidade FOREIGN KEY (id_unidade)
         REFERENCES unidade (id_unidade)
         ON DELETE RESTRICT
