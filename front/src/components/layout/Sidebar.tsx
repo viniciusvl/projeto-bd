@@ -1,13 +1,16 @@
 import { useEffect, useState } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import {
+  Award,
   BarChart3,
-  CalendarClock,
+  Building2,
+  CalendarDays,
   ChevronDown,
-  GraduationCap,
   HeartPulse,
+  History,
+  LayoutDashboard,
   Stethoscope,
-  UserCog,
+  Syringe,
   Users,
 } from "lucide-react";
 
@@ -17,10 +20,11 @@ const activeCls = "bg-brand-600 text-white shadow-sm";
 const inactiveCls = "text-slate-600 hover:bg-brand-50 hover:text-brand-700";
 
 const reportItems = [
-  { to: "/relatorios/residentes", label: "Residentes", icon: GraduationCap },
-  { to: "/relatorios/preceptores", label: "Preceptores", icon: UserCog },
-  { to: "/relatorios/plantoes", label: "Plantões", icon: CalendarClock },
+  { to: "/relatorios/desempenho", label: "Desempenho", icon: Award },
+  { to: "/relatorios/unidades", label: "Unidades", icon: Building2 },
   { to: "/relatorios/pacientes", label: "Pacientes", icon: HeartPulse },
+  { to: "/relatorios/procedimentos", label: "Procedimentos", icon: Syringe },
+  { to: "/relatorios/auditoria", label: "Auditoria", icon: History },
 ];
 
 export function Sidebar({
@@ -61,6 +65,17 @@ export function Sidebar({
 
         <nav className="flex-1 space-y-1 overflow-y-auto p-3">
           <NavLink
+            to="/"
+            end
+            onClick={onClose}
+            className={({ isActive }) =>
+              `${linkBase} ${isActive ? activeCls : inactiveCls}`
+            }
+          >
+            <LayoutDashboard className="h-5 w-5" /> Início
+          </NavLink>
+
+          <NavLink
             to="/atendimento"
             onClick={onClose}
             className={({ isActive }) =>
@@ -78,6 +93,16 @@ export function Sidebar({
             }
           >
             <Users className="h-5 w-5" /> Pacientes
+          </NavLink>
+
+          <NavLink
+            to="/escala"
+            onClick={onClose}
+            className={({ isActive }) =>
+              `${linkBase} ${isActive ? activeCls : inactiveCls}`
+            }
+          >
+            <CalendarDays className="h-5 w-5" /> Escala
           </NavLink>
 
           <button

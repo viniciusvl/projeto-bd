@@ -360,10 +360,12 @@ WHERE a.id_unidade IS NULL;
 
 UPDATE atendimento SET id_unidade = 2 WHERE id_unidade IS NULL;
 
--- 15.3 procedimento_realizado.data_hora_inicio — usa o horário do atendimento
+-- 15.3 procedimento_realizado.data_hora_inicio — inicia o 1º procedimento alguns
+--      minutos após o atendimento (espera de 5 a 30 min, variando por atendimento),
+--      para que o tempo médio de espera por unidade não fique zerado.
 UPDATE procedimento_realizado pr
 JOIN atendimento a ON a.id_atendimento = pr.id_atendimento
-SET pr.data_hora_inicio = a.data_hora
+SET pr.data_hora_inicio = a.data_hora + INTERVAL (5 + (a.id_atendimento MOD 6) * 5) MINUTE
 WHERE pr.data_hora_inicio IS NULL;
 
 -- 15.4 procedimento.media_tempo_procedimento — média realizada inicial
@@ -376,3 +378,64 @@ JOIN (
 ) m ON m.id_procedimento = p.id_procedimento
 SET p.media_tempo_procedimento = m.media
 WHERE p.media_tempo_procedimento IS NULL;
+
+-- ============================================================================
+-- 16. Atendimentos de AGOSTO/2026 (ids 39-48) — distribuídos nas 4 unidades
+--     para popular as estatísticas mensais do mês corrente. id_unidade e
+--     data_hora_inicio são definidos aqui (as UPDATEs das seções 15.2/15.3
+--     já rodaram acima), gerando também tempos de espera realistas (> 0).
+-- ============================================================================
+
+-- 16.1 atendimento (10 novos: 39-48)
+INSERT IGNORE INTO atendimento
+    (id_atendimento, data_hora, duracao_minutos, id_paciente, id_residente, id_preceptor, id_unidade) VALUES
+(39, '2026-08-03 08:30:00', 45,  1,  8, 14, 1),   -- UTI Adulto:            Maria    + Rafael  + Fernando
+(40, '2026-08-05 14:00:00', 30, 20, 13, 14, 1),   -- UTI Adulto:            Roberto  + Isabela + Fernando
+(41, '2026-08-04 09:15:00', 50,  2,  9, 15, 2),   -- Pronto Socorro:        Pedro    + Camila  + Patricia
+(42, '2026-08-06 10:30:00', 25, 21, 10, 16, 2),   -- Pronto Socorro:        Juliana  + Lucas   + Eduardo
+(43, '2026-08-10 16:45:00', 40,  6, 11, 17, 2),   -- Pronto Socorro:        Carlos   + Beatriz + Adriana
+(44, '2026-08-07 11:00:00', 35,  7,  9, 15, 3),   -- Ambulatorio Pediatria: Fernanda + Camila  + Patricia
+(45, '2026-08-12 13:30:00', 20,  3, 11, 17, 3),   -- Ambulatorio Pediatria: Ana      + Beatriz + Adriana
+(46, '2026-08-11 07:30:00', 90,  4, 12, 18, 4),   -- Bloco Cirurgico:       Evandro  + Thiago  + Marcos
+(47, '2026-08-14 15:00:00', 60, 22, 12, 18, 4),   -- Bloco Cirurgico:       Marcelo  + Thiago  + Marcos
+(48, '2026-08-18 09:00:00', 75, 24, 10, 16, 4);   -- Bloco Cirurgico:       Rafael M + Lucas   + Eduardo
+
+-- 16.2 procedimento_realizado dos atendimentos de agosto (com data_hora_inicio
+--      alguns minutos após o atendimento, gerando tempo de espera > 0)
+INSERT IGNORE INTO procedimento_realizado
+    (id_atendimento, id_procedimento, quantidade, faturado, tempo_real_minutos, data_hora_inicio, observacao) VALUES
+(39, 1, 1, TRUE,  14, '2026-08-03 08:45:00', 'Eletrocardiograma de rotina na UTI'),
+(40, 5, 1, FALSE,  6, '2026-08-05 14:10:00', 'Puncao venosa para coleta'),
+(41, 3, 1, TRUE,  40, '2026-08-04 09:30:00', 'Sutura de ferimento em membro superior'),
+(41, 6, 1, FALSE, 12, '2026-08-04 09:35:00', 'Curativo apos sutura'),
+(42, 5, 1, FALSE,  7, '2026-08-06 10:40:00', 'Puncao venosa para medicacao'),
+(43, 2, 1, TRUE,  20, '2026-08-10 17:00:00', 'Raio-X de torax'),
+(44, 6, 1, FALSE, 11, '2026-08-07 11:12:00', 'Curativo simples pediatrico'),
+(45, 6, 1, FALSE,  9, '2026-08-12 13:40:00', 'Troca de curativo'),
+(46, 4, 1, TRUE,  12, '2026-08-11 07:50:00', 'Intubacao orotraqueal pre-cirurgica'),
+(46, 6, 2, FALSE, 18, '2026-08-11 08:10:00', 'Curativo pos-operatorio'),
+(47, 3, 1, TRUE,  45, '2026-08-14 15:20:00', 'Sutura cirurgica prolongada'),
+(48, 3, 1, TRUE,  50, '2026-08-18 09:25:00', 'Sutura de ferimento cirurgico'),
+(48, 5, 1, FALSE,  6, '2026-08-18 09:30:00', 'Acesso venoso para anestesia');
+
+-- ============================================================================
+-- 17. Movimentações extras para gerar histórico de AUDITORIA com variedade de
+--     operações (Alteração e Exclusão), além das Criações. Usa atendimentos
+--     temporários (49, 50) para NÃO afetar as estatísticas/relatórios.
+--     Os triggers trg_audita_atendimento_* registram cada operação.
+-- ============================================================================
+
+-- 17.1 Criação dos atendimentos temporários (gera 'Criação' na auditoria)
+INSERT IGNORE INTO atendimento
+    (id_atendimento, data_hora, duracao_minutos, id_paciente, id_residente, id_preceptor, id_unidade) VALUES
+(49, '2026-08-20 10:00:00', 30,  5,  9, 15, 2),   -- Lucia    + Camila + Patricia (Pronto Socorro)
+(50, '2026-08-21 14:00:00', 40, 26, 10, 16, 4);   -- Gustavo  + Lucas  + Eduardo  (Bloco Cirurgico)
+
+-- 17.2 Alterações (gera 'Alteração' na auditoria, com diffs de campos)
+UPDATE atendimento SET duracao_minutos = 55 WHERE id_atendimento = 49;
+UPDATE atendimento
+   SET data_hora = '2026-08-22 08:30:00', duracao_minutos = 25, id_unidade = 1
+ WHERE id_atendimento = 50;
+
+-- 17.3 Exclusões (gera 'Exclusão' na auditoria, com os valores antigos)
+DELETE FROM atendimento WHERE id_atendimento IN (49, 50);

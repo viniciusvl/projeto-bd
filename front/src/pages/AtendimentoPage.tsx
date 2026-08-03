@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { CalendarPlus, Eye, Search, Users } from "lucide-react";
+import { CalendarPlus, Eye, Search, Stethoscope } from "lucide-react";
 import { AppLayout } from "../components/layout/AppLayout";
 import { Button } from "../components/ui/Button";
 import { Card } from "../components/ui/Card";
@@ -30,7 +30,7 @@ export function AtendimentoPage() {
   return (
     <AppLayout
       title="Atendimento"
-      subtitle="Selecione um paciente para visualizar seus atendimentos e procedimentos"
+      subtitle="Registre novos atendimentos e consulte o histórico de cada paciente"
       actions={
         <Button onClick={() => setNovoOpen(true)}>
           <CalendarPlus className="h-4 w-4" /> Novo Atendimento
@@ -38,9 +38,9 @@ export function AtendimentoPage() {
       }
     >
       <Card
-        icon={<Users className="h-5 w-5" />}
-        title="Pacientes"
-        subtitle={`${filtrados.length} paciente(s)`}
+        icon={<Stethoscope className="h-5 w-5" />}
+        title="Selecionar paciente"
+        subtitle={`${filtrados.length} paciente(s) — clique para ver os atendimentos`}
         action={
           <div className="relative">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
@@ -69,7 +69,6 @@ export function AtendimentoPage() {
                 <tr className="bg-slate-50">
                   <th className="th">Paciente</th>
                   <th className="th">Convênio</th>
-                  <th className="th">Cidade / UF</th>
                   <th className="th text-right">Ações</th>
                 </tr>
               </thead>
@@ -81,9 +80,6 @@ export function AtendimentoPage() {
                       <div className="text-xs text-slate-400">#{p.id_pessoa}</div>
                     </td>
                     <td className="td">{p.num_convenio ?? "—"}</td>
-                    <td className="td">
-                      {[p.cidade, p.estado].filter(Boolean).join(" / ") || "—"}
-                    </td>
                     <td className="td text-right">
                       <Button
                         variant="secondary"

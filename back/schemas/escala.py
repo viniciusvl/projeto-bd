@@ -29,3 +29,23 @@ class ReajustarEscalaIn(BaseModel):
 
 class ReajustarEscalaOut(BaseModel):
     message: str
+
+
+class EscalaCreate(BaseModel):
+    id_unidade: int
+    dia_semana: DiaSemana
+    turno: Turno
+    id_residente: int
+    id_preceptor: int
+
+
+class EscalaOut(BaseModel):
+    id_escala: int
+    id_unidade: int
+    nome_unidade: str
+    dia_semana: str
+    turno: str
+    id_residente: int
+    nome_residente: str
+    id_preceptor: int
+    nome_preceptor: str

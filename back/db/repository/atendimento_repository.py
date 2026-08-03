@@ -11,6 +11,7 @@ from db.models import (
     Preceptor,
     ProcedimentoRealizado,
     Residente,
+    Unidade,
 )
 
 def criar_atendimento(
@@ -103,6 +104,8 @@ def tempo_medio(session: Session):
 
 
 def tempo_medio_espera(session: Session):
+    """Tempo médio de espera por unidade (equivalente a sp_calcular_tempo_medio_espera):
+    média, por unidade, de minutos entre o atendimento e o 1º procedimento."""
     inicio_primeiro_procedimento = (
         select(
             ProcedimentoRealizado.id_atendimento,
@@ -113,22 +116,31 @@ def tempo_medio_espera(session: Session):
         .subquery()
     )
 
-    stmt = select(
-        func.round(
-            func.avg(
-                func.timestampdiff(
-                    literal_column("MINUTE"),
-                    Atendimento.data_hora,
-                    inicio_primeiro_procedimento.c.inicio,
-                )
-            ),
-            1,
-        ).label("tempo_medio_espera_minutos")
-    ).join(
-        inicio_primeiro_procedimento,
-        inicio_primeiro_procedimento.c.id_atendimento == Atendimento.id_atendimento,
+    stmt = (
+        select(
+            Unidade.id_unidade,
+            Unidade.nome.label("unidade"),
+            func.count(Atendimento.id_atendimento).label("total_atendimentos_analisados"),
+            func.round(
+                func.avg(
+                    func.timestampdiff(
+                        literal_column("MINUTE"),
+                        Atendimento.data_hora,
+                        inicio_primeiro_procedimento.c.inicio,
+                    )
+                ),
+                2,
+            ).label("tempo_medio_espera_minutos"),
+        )
+        .join(Unidade, Atendimento.id_unidade == Unidade.id_unidade)
+        .join(
+            inicio_primeiro_procedimento,
+            inicio_primeiro_procedimento.c.id_atendimento == Atendimento.id_atendimento,
+        )
+        .group_by(Unidade.id_unidade, Unidade.nome)
+        .order_by(Unidade.nome)
     )
-    return session.execute(stmt).scalar()
+    return session.execute(stmt).all()
 
 # Consulta nova da etapa 2
 def ultimo_atendimento_por_paciente(session: Session):

@@ -38,7 +38,7 @@ export function PacientesPage() {
   return (
     <AppLayout
       title="Pacientes"
-      subtitle="Gerencie os dados de convênio e endereço dos pacientes"
+      subtitle="Cadastro e dados dos pacientes — convênio e endereço"
     >
       <Card
         icon={<Users className="h-5 w-5" />}

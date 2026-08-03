@@ -6,6 +6,7 @@ import pymysql
 from pymysql.constants import CLIENT
 
 SCRIPTS_DIR = Path(__file__).resolve().parent / "scripts"
+MARKER_FILE = Path("/var/lib/mysql/.initialized")
 
 
 def _conexao():
@@ -188,18 +189,27 @@ def criar_triggers(cursor):
 
 def main():
     apenas_dados = "--only-data" in sys.argv
+
+    if MARKER_FILE.exists():
+        print("Banco já foi inicializado. Pulando...")
+        return
+
     conexao = _conexao()
     try:
         with conexao.cursor() as cursor:
             if not apenas_dados:
                 print("Aplicando schema (hospital.sql)...")
                 _executar_arquivo(cursor, SCRIPTS_DIR / "hospital.sql")
+                print("Criando views...")
+                _executar_arquivo(cursor, SCRIPTS_DIR / "views.sql")
                 print("Carregando triggers...")
                 criar_triggers(cursor)
             print("Inserindo dados iniciais (data.sql)...")
             _executar_arquivo(cursor, SCRIPTS_DIR / "data.sql")
         conexao.commit()
         print("Concluido.")
+
+        MARKER_FILE.touch()
     except Exception:
         conexao.rollback()
         raise
